@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Character Recognition (similar to what USPS uses)</title>
+  <meta name="author" content="Pandu Ranganath">
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="./favicon.png" rel="icon">
+  <link href="./theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+  <script src="./theme/js/modernizr-2.0.js"></script>
+  <script src="./theme/js/ender.js"></script>
+  <script src="./theme/js/octopress.js" type="text/javascript"></script>
+
+  <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+  rel="stylesheet" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <link href='http://fonts.googleapis.com/css?family=Roboto:300,100' rel='stylesheet' type='text/css'>
+</head>
+
+<body>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+</ul>
+
+<!-- TODO: add search here
+<form action="" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:." />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+-->
+
+<ul class="main-navigation">
+    <!-- TODO: add categories here? -->
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div>
+  <article class="hentry" role="article">
+<header>
+      <h1 class="entry-title">Character Recognition (similar to what USPS uses)</h1>
+      <p class="meta"><time datetime="2016-10-08T16:00:00-07:00" pubdate>Sat 08 October 2016</time></p>
+</header>
+
+  <div class="entry-content"><p>Even though the United States Postal Service, as an organization, was formed in 1971, it traces its roots back to the Post Office Department, an organization formed in 1792 by President Benjamin Franklin. It later evolved into a cabinet-level department in 1872, before finally being transformed into the USPS we know today in 1971, as an agency of the U.S. government.</p>
+<p>Back in the day, all mail was hand read and delivered. Even up the turn of the 20th century, antiquated techniques such as the pigeonhole method from colonial times were used for mail-handling. During the 1950's, the post office started intense research on the coding systems used in many other countries and started down the process of automation. In 1982, the first computer-driven, OCR machine got installed in Los Angeles, and by the end of 1984, over 250 OCRs machines were installed in 118 major mail processing centers across the country and were processing an average of 6,200 pieces of mail per hour.</p>
+<h3>Hand-Written Digits</h3>
+<p>Nowadays, the Postal Service is one of the world leaders in optical character recognition technology with machines reading nearly +98 percent of all hand-addressed letter mail and +99.5 percent of machine-printed mail, with a single tray sorting machines capable of sorting more than 18 million trays of mail per day.</p>
+<p>Let's see if it's possible for you to train a support vector classifier on your computer in a few seconds using machine learning, and if your classification accuracy is similar or better than the advertised USPS stats. For this lab, you'll be making use of the <a href="https://archive.ics.uci.edu/ml/datasets/Optical+Recognition+of+Handwritten+Digits">Optical Recognition of Handwritten Digits dataset</a>, provided courtesy of UCI's Machine Learning Repository.</p>
+<ol>
+<li>The dataset for the lab is stored at /Module6/Datasets/optdigits.tes and /Module6/Datasets/optdigits.tra. Check out the official dataset page at the UCI ML Repository to figure out why there are two files.</li>
+<li>Make the requisite changes to get the project running, by providing the path to the .tes and .tra files.</li>
+<li>Train your SVC classifier with the parameters provided, and keep testing until you're able to beat the classification abilities of the USPS.</li>
+<li>Use grid search mechanism to </li>
+</ol>
+<h4>We are going to answer the question below</h4>
+<p>What best accuracy score can we get?</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+
+<span class="c1"># The Dataset comes from:</span>
+<span class="c1"># https://archive.ics.uci.edu/ml/datasets/Optical+Recognition+of+Handwritten+Digits</span>
+
+<span class="c1"># Note: Some of the code below is from DAT210X course from Microsoft/Edx</span>
+
+<span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">path_test</span><span class="p">,</span> <span class="n">path_train</span><span class="p">):</span>
+  <span class="c1"># Load up the data.</span>
+  <span class="c1"># You probably could have written this..</span>
+  <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_test</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>  <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">testing</span>  <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+  <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_train</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">training</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+  <span class="c1"># The number of samples between training and testing can vary</span>
+  <span class="c1"># But the number of features better remain the same!</span>
+  <span class="n">n_features</span> <span class="o">=</span> <span class="n">testing</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+  <span class="n">X_test</span>  <span class="o">=</span> <span class="n">testing</span><span class="o">.</span><span class="n">ix</span><span class="p">[:,:</span><span class="n">n_features</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">X_train</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">ix</span><span class="p">[:,:</span><span class="n">n_features</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">y_test</span>  <span class="o">=</span> <span class="n">testing</span><span class="o">.</span><span class="n">ix</span><span class="p">[:,</span><span class="n">n_features</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+  <span class="n">y_train</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">ix</span><span class="p">[:,</span><span class="n">n_features</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+  <span class="c1">#</span>
+  <span class="c1"># Special:</span>
+
+  <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span>
+
+
+<span class="k">def</span> <span class="nf">peekData</span><span class="p">():</span>
+  <span class="c1"># The &#39;targets&#39; or labels are stored in y. The &#39;samples&#39; or data is stored in X</span>
+  <span class="k">print</span> <span class="p">(</span><span class="s2">&quot;Peeking your data...&quot;</span><span class="p">)</span>
+  <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+
+  <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+      <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">cnt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+      <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">X_train</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">cnt</span><span class="p">,:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">gray_r</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+      <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+      <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+  <span class="n">fig</span><span class="o">.</span><span class="n">set_tight_layout</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">drawPredictions</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+  <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+
+  <span class="c1"># Make some guesses</span>
+  <span class="n">y_guess</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+
+
+  <span class="c1">#</span>
+  <span class="c1"># INFO: This is the second lab we&#39;re demonstrating how to</span>
+  <span class="c1"># do multi-plots using matplot lab. In the next assignment(s),</span>
+  <span class="c1"># it&#39;ll be your responsibility to use this and assignment #1</span>
+  <span class="c1"># as tutorials to add in the plotting code yourself!</span>
+  <span class="n">num_rows</span> <span class="o">=</span> <span class="mi">10</span>
+  <span class="n">num_cols</span> <span class="o">=</span> <span class="mi">5</span>
+
+  <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_cols</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_rows</span><span class="p">):</span>
+      <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">num_cols</span><span class="p">,</span> <span class="n">num_rows</span><span class="p">,</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+      <span class="c1"># 8x8 is the size of the image, 64 pixels</span>
+      <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">X_test</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">index</span><span class="p">,:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">gray_r</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+
+      <span class="c1"># Green = Guessed right</span>
+      <span class="c1"># Red = Fail!</span>
+      <span class="n">fontcolor</span> <span class="o">=</span> <span class="s1">&#39;g&#39;</span> <span class="k">if</span> <span class="n">y_test</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">==</span> <span class="n">y_guess</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">else</span> <span class="s1">&#39;r&#39;</span>
+      <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Label: </span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">y_guess</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">fontcolor</span><span class="p">)</span>
+      <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+      <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+  <span class="n">fig</span><span class="o">.</span><span class="n">set_tight_layout</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+
+<span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s1">&#39;/Users/Pandu/Downloads/DAT210x/code/Module6/Datasets/optdigits.tes&#39;</span><span class="p">,</span> 
+                                        <span class="s1">&#39;/Users/Pandu/Downloads/DAT210x/code/Module6/Datasets/optdigits.tra&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">svm</span>
+
+<span class="c1"># </span>
+<span class="c1"># Get to know your data. It seems its already well organized in</span>
+<span class="c1"># [n_samples, n_features] form. Our dataset looks like (4389, 784).</span>
+<span class="c1"># Also your labels are already shaped as [n_samples].</span>
+<span class="n">peekData</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>Peeking your data...
+
+
+/Users/Pandu/anaconda/lib/python3.5/site-packages/matplotlib/figure.py:1744: UserWarning: This figure includes Axes that are not compatible with tight_layout, so its results might be incorrect.
+  warnings.warn(&quot;This figure includes Axes that are not &quot;
+</pre></div>
+
+
+<p><img alt="png" src="output_2_2.png" /></p>
+<div class="highlight"><pre><span></span><span class="c1"># Create an SVC classifier. Leave C=1, but set gamma to 0.001</span>
+<span class="c1"># and set the kernel to linear. Then train the model on the training</span>
+<span class="c1"># data / labels:</span>
+<span class="k">print</span> <span class="p">(</span><span class="s2">&quot;Training SVC Classifier...&quot;</span><span class="p">)</span>
+<span class="c1">#</span>
+
+<span class="c1">#</span>
+<span class="c1"># Create an SVC classifier named svc</span>
+<span class="c1"># Use a linear kernel, and set the C value to C</span>
+<span class="c1">#</span>
+<span class="kn">from</span> <span class="nn">sklearn.svm</span> <span class="kn">import</span> <span class="n">SVC</span>
+<span class="n">svc</span> <span class="o">=</span> <span class="n">SVC</span><span class="p">(</span><span class="n">C</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="s1">&#39;rbf&#39;</span><span class="p">)</span>
+<span class="n">svc</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span><span class="n">y_train</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>Training SVC Classifier...
+
+
+
+
+
+SVC(C=10, cache_size=200, class_weight=None, coef0=0.0,
+  decision_function_shape=None, degree=3, gamma=0.001, kernel=&#39;rbf&#39;,
+  max_iter=-1, probability=False, random_state=None, shrinking=True,
+  tol=0.001, verbose=False)
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Calculate the score of your SVC against the testing data</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Scoring SVC Classifier...&quot;</span><span class="p">)</span>
+<span class="c1">#</span>
+
+<span class="n">score</span> <span class="o">=</span> <span class="n">svc</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Score:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>Scoring SVC Classifier...
+Score:
+ 0.982739420935
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Visual Confirmation of accuracy</span>
+<span class="n">drawPredictions</span><span class="p">(</span><span class="n">svc</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>/Users/Pandu/anaconda/lib/python3.5/site-packages/matplotlib/figure.py:1744: UserWarning: This figure includes Axes that are not compatible with tight_layout, so its results might be incorrect.
+  warnings.warn(&quot;This figure includes Axes that are not &quot;
+</pre></div>
+
+
+<p><img alt="png" src="output_5_1.png" /></p>
+<div class="highlight"><pre><span></span><span class="c1">#</span>
+<span class="c1"># Print out the TRUE value of the 1000th digit in the test set</span>
+<span class="c1">#</span>
+<span class="c1"># .. your code here ..</span>
+<span class="k">print</span> <span class="p">(</span><span class="s2">&quot;1000th test label: &quot;</span><span class="p">,</span> <span class="n">X_test</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="mi">999</span><span class="p">]])</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># Predict the value of the 1000th digit in the test set.</span>
+<span class="c1"># Was the model&#39;s prediction correct?</span>
+<span class="c1">#</span>
+<span class="k">print</span> <span class="p">(</span><span class="s2">&quot;1000th test prediction: &quot;</span><span class="p">,</span> <span class="n">svc</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="mi">990</span><span class="p">]]))</span>
+
+<span class="n">test</span> <span class="o">=</span> <span class="n">svc</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="mi">999</span><span class="p">]])</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>1000th test label:       0  0.1  5  13  9  1  0.2  0.3  0.4  0.5  ...   0.22  0.23  0.24  0.25  6  \
+999  0    0  1  14  2  0    0    0    0    0  ...      8     3     0     0  2
+
+     13.2  10.2  0.26  0.27  0.28  
+999    11    12    15    16    15
+
+[1 rows x 64 columns]
+1000th test prediction:  [1]
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">test</span> <span class="o">=</span> <span class="n">svc</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="mi">999</span><span class="p">]])</span>
+<span class="k">print</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>[1]
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">X_test</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="mi">999</span><span class="p">,:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">gray_r</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;matplotlib.image.AxesImage at 0x117f97780&gt;
+</pre></div>
+
+
+<p><img alt="png" src="output_8_1.png" /></p>
+<div class="highlight"><pre><span></span><span class="n">predictions</span> <span class="o">=</span> <span class="n">svc</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">classification_report</span><span class="p">,</span><span class="n">confusion_matrix</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="n">predictions</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>             precision    recall  f1-score   support
+
+          0       0.99      1.00      1.00       177
+          1       0.96      0.99      0.98       182
+          2       1.00      0.98      0.99       177
+          3       0.98      0.98      0.98       183
+          4       1.00      1.00      1.00       181
+          5       0.98      0.99      0.98       182
+          6       1.00      0.99      1.00       181
+          7       0.99      0.96      0.97       179
+          8       0.98      0.95      0.97       174
+          9       0.94      0.98      0.96       180
+
+avg / total       0.98      0.98      0.98      1796
+</pre></div>
+
+
+<h2>Gridsearch</h2>
+<p>Finding the right parameters (like what C or gamma values to use) is a tricky task! But luckily, we can be a little lazy and just try a bunch of combinations and see what works best! This idea of creating a 'grid' of parameters and just trying out all the possible combinations is called a Gridsearch, this method is common enough that Scikit-learn has this functionality built in with GridSearchCV! The CV stands for cross-validation which is the</p>
+<p>GridSearchCV takes a dictionary that describes the parameters that should be tried and a model to train. The grid of parameters is defined as a dictionary, where the keys are the parameters and the values are the settings to be tested.</p>
+<div class="highlight"><pre><span></span><span class="n">param_grid</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;C&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">],</span> <span class="s1">&#39;gamma&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0001</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span> <span class="s1">&#39;kernel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;rbf&#39;</span><span class="p">]}</span> 
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.grid_search</span> <span class="kn">import</span> <span class="n">GridSearchCV</span>
+</pre></div>
+
+
+<p>One of the great things about GridSearchCV is that it is a meta-estimator. It takes an estimator like SVC, and creates a new estimator, that behaves exactly the same - in this case, like a classifier. You should add refit=True and choose verbose to whatever number you want, higher the number, the more verbose (verbose just means the text output describing the process).</p>
+<div class="highlight"><pre><span></span><span class="n">grid</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">SVC</span><span class="p">(),</span><span class="n">param_grid</span><span class="p">,</span><span class="n">refit</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+
+
+<p>What fit does is a bit more involved then usual. First, it runs the same loop with cross-validation, to find the best parameter combination. Once it has the best combination, it runs fit again on all data passed to fit (without cross-validation), to built a single new model using the best parameter setting.</p>
+<div class="highlight"><pre><span></span><span class="c1"># May take awhile!</span>
+<span class="n">grid</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span><span class="n">y_train</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>Fitting 3 folds for each of 25 candidates, totalling 75 fits
+[CV] C=0.1, kernel=rbf, gamma=0.0001 .................................
+[CV] ........ C=0.1, kernel=rbf, gamma=0.0001, score=0.945967 -   0.9s
+[CV] C=0.1, kernel=rbf, gamma=0.0001 .................................
+[CV] ........ C=0.1, kernel=rbf, gamma=0.0001, score=0.941176 -   1.0s
+[CV] C=0.1, kernel=rbf, gamma=0.0001 .................................
+[CV] ........ C=0.1, kernel=rbf, gamma=0.0001, score=0.940945 -   1.0s
+[CV] C=0.1, kernel=rbf, gamma=0.001 ..................................
+[CV] ......... C=0.1, kernel=rbf, gamma=0.001, score=0.966327 -   0.7s
+[CV] C=0.1, kernel=rbf, gamma=0.001 ..................................
+[CV] ......... C=0.1, kernel=rbf, gamma=0.001, score=0.976471 -   0.7s
+[CV] C=0.1, kernel=rbf, gamma=0.001 ..................................
+[CV] ......... C=0.1, kernel=rbf, gamma=0.001, score=0.972441 -   0.7s
+[CV] C=0.1, kernel=rbf, gamma=0.01 ...................................
+[CV] .......... C=0.1, kernel=rbf, gamma=0.01, score=0.113547 -   1.6s
+[CV] C=0.1, kernel=rbf, gamma=0.01 ...................................
+[CV] .......... C=0.1, kernel=rbf, gamma=0.01, score=0.199216 -   1.5s
+[CV] C=0.1, kernel=rbf, gamma=0.01 ...................................
+[CV] .......... C=0.1, kernel=rbf, gamma=0.01, score=0.162992 -   1.6s
+[CV] C=0.1, kernel=rbf, gamma=0.5 ....................................
+[CV] ........... C=0.1, kernel=rbf, gamma=0.5, score=0.101801 -   1.5s
+[CV] C=0.1, kernel=rbf, gamma=0.5 ....................................
+[CV] ........... C=0.1, kernel=rbf, gamma=0.5, score=0.101961 -   1.5s
+[CV] C=0.1, kernel=rbf, gamma=0.5 ....................................
+[CV] ........... C=0.1, kernel=rbf, gamma=0.5, score=0.101575 -   1.6s
+[CV] C=0.1, kernel=rbf, gamma=0.1 ....................................
+[CV] ........... C=0.1, kernel=rbf, gamma=0.1, score=0.101801 -   1.9s
+[CV] C=0.1, kernel=rbf, gamma=0.1 ....................................
+[CV] ........... C=0.1, kernel=rbf, gamma=0.1, score=0.101961 -   1.8s
+[CV] C=0.1, kernel=rbf, gamma=0.1 ....................................
+[CV] ........... C=0.1, kernel=rbf, gamma=0.1, score=0.102362 -   1.8s
+[CV] C=1, kernel=rbf, gamma=0.0001 ...................................
+[CV] .......... C=1, kernel=rbf, gamma=0.0001, score=0.972592 -   0.4s
+[CV] C=1, kernel=rbf, gamma=0.0001 ...................................
+[CV] .......... C=1, kernel=rbf, gamma=0.0001, score=0.975686 -   0.4s
+[CV] C=1, kernel=rbf, gamma=0.0001 ...................................
+[CV] .......... C=1, kernel=rbf, gamma=0.0001, score=0.974016 -   0.4s
+[CV] C=1, kernel=rbf, gamma=0.001 ....................................
+[CV] ........... C=1, kernel=rbf, gamma=0.001, score=0.986688 -   0.4s
+[CV] C=1, kernel=rbf, gamma=0.001 ....................................
+[CV] ........... C=1, kernel=rbf, gamma=0.001, score=0.990588 -   0.4s
+[CV] C=1, kernel=rbf, gamma=0.001 ....................................
+[CV] ........... C=1, kernel=rbf, gamma=0.001, score=0.990551 -   0.5s
+[CV] C=1, kernel=rbf, gamma=0.01 .....................................
+[CV] ............ C=1, kernel=rbf, gamma=0.01, score=0.804229 -   1.7s
+[CV] C=1, kernel=rbf, gamma=0.01 .....................................
+[CV] ............ C=1, kernel=rbf, gamma=0.01, score=0.793725 -   1.8s
+[CV] C=1, kernel=rbf, gamma=0.01 .....................................
+[CV] ............ C=1, kernel=rbf, gamma=0.01, score=0.825197 -   1.7s
+[CV] C=1, kernel=rbf, gamma=0.5 ......................................
+[CV] ............. C=1, kernel=rbf, gamma=0.5, score=0.101801 -   1.6s
+[CV] C=1, kernel=rbf, gamma=0.5 ......................................
+[CV] ............. C=1, kernel=rbf, gamma=0.5, score=0.101961 -   1.5s
+[CV] C=1, kernel=rbf, gamma=0.5 ......................................
+[CV] ............. C=1, kernel=rbf, gamma=0.5, score=0.101575 -   1.7s
+[CV] C=1, kernel=rbf, gamma=0.1 ......................................
+[CV] ............. C=1, kernel=rbf, gamma=0.1, score=0.102584 -   1.8s
+[CV] C=1, kernel=rbf, gamma=0.1 ......................................
+[CV] ............. C=1, kernel=rbf, gamma=0.1, score=0.105882 -   1.9s
+[CV] C=1, kernel=rbf, gamma=0.1 ......................................
+[CV] ............. C=1, kernel=rbf, gamma=0.1, score=0.106299 -   1.9s
+[CV] C=10, kernel=rbf, gamma=0.0001 ..................................
+[CV] ......... C=10, kernel=rbf, gamma=0.0001, score=0.986688 -   0.2s
+[CV] C=10, kernel=rbf, gamma=0.0001 ..................................
+[CV] ......... C=10, kernel=rbf, gamma=0.0001, score=0.983529 -   0.2s
+[CV] C=10, kernel=rbf, gamma=0.0001 ..................................
+
+
+[Parallel(n_jobs=1)]: Done  31 tasks       | elapsed:   37.9s
+
+
+[CV] ......... C=10, kernel=rbf, gamma=0.0001, score=0.988189 -   0.2s
+[CV] C=10, kernel=rbf, gamma=0.001 ...................................
+[CV] .......... C=10, kernel=rbf, gamma=0.001, score=0.992169 -   0.4s
+[CV] C=10, kernel=rbf, gamma=0.001 ...................................
+[CV] .......... C=10, kernel=rbf, gamma=0.001, score=0.991373 -   0.4s
+[CV] C=10, kernel=rbf, gamma=0.001 ...................................
+[CV] .......... C=10, kernel=rbf, gamma=0.001, score=0.991339 -   0.4s
+[CV] C=10, kernel=rbf, gamma=0.01 ....................................
+[CV] ........... C=10, kernel=rbf, gamma=0.01, score=0.821457 -   1.8s
+[CV] C=10, kernel=rbf, gamma=0.01 ....................................
+[CV] ........... C=10, kernel=rbf, gamma=0.01, score=0.809412 -   1.8s
+[CV] C=10, kernel=rbf, gamma=0.01 ....................................
+[CV] ........... C=10, kernel=rbf, gamma=0.01, score=0.840945 -   1.8s
+[CV] C=10, kernel=rbf, gamma=0.5 .....................................
+[CV] ............ C=10, kernel=rbf, gamma=0.5, score=0.101801 -   1.8s
+[CV] C=10, kernel=rbf, gamma=0.5 .....................................
+[CV] ............ C=10, kernel=rbf, gamma=0.5, score=0.101961 -   1.8s
+[CV] C=10, kernel=rbf, gamma=0.5 .....................................
+[CV] ............ C=10, kernel=rbf, gamma=0.5, score=0.103150 -   1.7s
+[CV] C=10, kernel=rbf, gamma=0.1 .....................................
+[CV] ............ C=10, kernel=rbf, gamma=0.1, score=0.102584 -   1.9s
+[CV] C=10, kernel=rbf, gamma=0.1 .....................................
+[CV] ............ C=10, kernel=rbf, gamma=0.1, score=0.105882 -   1.9s
+[CV] C=10, kernel=rbf, gamma=0.1 .....................................
+[CV] ............ C=10, kernel=rbf, gamma=0.1, score=0.107087 -   1.9s
+[CV] C=100, kernel=rbf, gamma=0.0001 .................................
+[CV] ........ C=100, kernel=rbf, gamma=0.0001, score=0.987471 -   0.2s
+[CV] C=100, kernel=rbf, gamma=0.0001 .................................
+[CV] ........ C=100, kernel=rbf, gamma=0.0001, score=0.981176 -   0.2s
+[CV] C=100, kernel=rbf, gamma=0.0001 .................................
+[CV] ........ C=100, kernel=rbf, gamma=0.0001, score=0.982677 -   0.2s
+[CV] C=100, kernel=rbf, gamma=0.001 ..................................
+[CV] ......... C=100, kernel=rbf, gamma=0.001, score=0.992169 -   0.4s
+[CV] C=100, kernel=rbf, gamma=0.001 ..................................
+[CV] ......... C=100, kernel=rbf, gamma=0.001, score=0.991373 -   0.4s
+[CV] C=100, kernel=rbf, gamma=0.001 ..................................
+[CV] ......... C=100, kernel=rbf, gamma=0.001, score=0.991339 -   0.4s
+[CV] C=100, kernel=rbf, gamma=0.01 ...................................
+[CV] .......... C=100, kernel=rbf, gamma=0.01, score=0.821457 -   1.7s
+[CV] C=100, kernel=rbf, gamma=0.01 ...................................
+[CV] .......... C=100, kernel=rbf, gamma=0.01, score=0.809412 -   1.8s
+[CV] C=100, kernel=rbf, gamma=0.01 ...................................
+[CV] .......... C=100, kernel=rbf, gamma=0.01, score=0.840945 -   1.8s
+[CV] C=100, kernel=rbf, gamma=0.5 ....................................
+[CV] ........... C=100, kernel=rbf, gamma=0.5, score=0.101801 -   1.8s
+[CV] C=100, kernel=rbf, gamma=0.5 ....................................
+[CV] ........... C=100, kernel=rbf, gamma=0.5, score=0.101961 -   1.7s
+[CV] C=100, kernel=rbf, gamma=0.5 ....................................
+[CV] ........... C=100, kernel=rbf, gamma=0.5, score=0.103150 -   1.7s
+[CV] C=100, kernel=rbf, gamma=0.1 ....................................
+[CV] ........... C=100, kernel=rbf, gamma=0.1, score=0.102584 -   1.9s
+[CV] C=100, kernel=rbf, gamma=0.1 ....................................
+[CV] ........... C=100, kernel=rbf, gamma=0.1, score=0.105882 -   1.9s
+[CV] C=100, kernel=rbf, gamma=0.1 ....................................
+[CV] ........... C=100, kernel=rbf, gamma=0.1, score=0.107087 -   1.9s
+[CV] C=1000, kernel=rbf, gamma=0.0001 ................................
+[CV] ....... C=1000, kernel=rbf, gamma=0.0001, score=0.987471 -   0.2s
+[CV] C=1000, kernel=rbf, gamma=0.0001 ................................
+[CV] ....... C=1000, kernel=rbf, gamma=0.0001, score=0.981176 -   0.2s
+[CV] C=1000, kernel=rbf, gamma=0.0001 ................................
+[CV] ....... C=1000, kernel=rbf, gamma=0.0001, score=0.981102 -   0.2s
+[CV] C=1000, kernel=rbf, gamma=0.001 .................................
+[CV] ........ C=1000, kernel=rbf, gamma=0.001, score=0.992169 -   0.4s
+[CV] C=1000, kernel=rbf, gamma=0.001 .................................
+[CV] ........ C=1000, kernel=rbf, gamma=0.001, score=0.991373 -   0.4s
+[CV] C=1000, kernel=rbf, gamma=0.001 .................................
+[CV] ........ C=1000, kernel=rbf, gamma=0.001, score=0.991339 -   0.4s
+[CV] C=1000, kernel=rbf, gamma=0.01 ..................................
+[CV] ......... C=1000, kernel=rbf, gamma=0.01, score=0.821457 -   1.9s
+[CV] C=1000, kernel=rbf, gamma=0.01 ..................................
+[CV] ......... C=1000, kernel=rbf, gamma=0.01, score=0.809412 -   1.8s
+[CV] C=1000, kernel=rbf, gamma=0.01 ..................................
+[CV] ......... C=1000, kernel=rbf, gamma=0.01, score=0.840945 -   1.8s
+[CV] C=1000, kernel=rbf, gamma=0.5 ...................................
+[CV] .......... C=1000, kernel=rbf, gamma=0.5, score=0.101801 -   1.8s
+[CV] C=1000, kernel=rbf, gamma=0.5 ...................................
+[CV] .......... C=1000, kernel=rbf, gamma=0.5, score=0.101961 -   1.9s
+[CV] C=1000, kernel=rbf, gamma=0.5 ...................................
+[CV] .......... C=1000, kernel=rbf, gamma=0.5, score=0.103150 -   1.7s
+[CV] C=1000, kernel=rbf, gamma=0.1 ...................................
+[CV] .......... C=1000, kernel=rbf, gamma=0.1, score=0.102584 -   1.8s
+[CV] C=1000, kernel=rbf, gamma=0.1 ...................................
+[CV] .......... C=1000, kernel=rbf, gamma=0.1, score=0.105882 -   1.9s
+[CV] C=1000, kernel=rbf, gamma=0.1 ...................................
+[CV] .......... C=1000, kernel=rbf, gamma=0.1, score=0.107087 -   2.0s
+
+
+[Parallel(n_jobs=1)]: Done  75 out of  75 | elapsed:  1.5min finished
+
+
+
+
+
+GridSearchCV(cv=None, error_score=&#39;raise&#39;,
+       estimator=SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,
+  decision_function_shape=None, degree=3, gamma=&#39;auto&#39;, kernel=&#39;rbf&#39;,
+  max_iter=-1, probability=False, random_state=None, shrinking=True,
+  tol=0.001, verbose=False),
+       fit_params={}, iid=True, n_jobs=1,
+       param_grid={&#39;C&#39;: [0.1, 1, 10, 100, 1000], &#39;kernel&#39;: [&#39;rbf&#39;], &#39;gamma&#39;: [0.0001, 0.001, 0.01, 0.5, 0.1]},
+       pre_dispatch=&#39;2*n_jobs&#39;, refit=True, scoring=None, verbose=3)
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">grid</span><span class="o">.</span><span class="n">best_params_</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>{&#39;C&#39;: 10, &#39;gamma&#39;: 0.001, &#39;kernel&#39;: &#39;rbf&#39;}
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">grid</span><span class="o">.</span><span class="n">best_estimator_</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>SVC(C=10, cache_size=200, class_weight=None, coef0=0.0,
+  decision_function_shape=None, degree=3, gamma=0.001, kernel=&#39;rbf&#39;,
+  max_iter=-1, probability=False, random_state=None, shrinking=True,
+  tol=0.001, verbose=False)
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">grid_predictions</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="n">grid_predictions</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>             precision    recall  f1-score   support
+
+          0       0.99      1.00      1.00       177
+          1       0.96      0.99      0.98       182
+          2       1.00      0.98      0.99       177
+          3       0.98      0.98      0.98       183
+          4       1.00      1.00      1.00       181
+          5       0.98      0.99      0.98       182
+          6       1.00      0.99      1.00       181
+          7       0.99      0.96      0.97       179
+          8       0.98      0.95      0.97       174
+          9       0.94      0.98      0.96       180
+
+avg / total       0.98      0.98      0.98      1796
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">score</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Score:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">Score</span><span class="o">:</span>
+ <span class="mf">0.982739420935</span>
+</pre></div></div>
+    <footer>
+<p class="meta">
+  <span class="byline author vcard">
+    Posted by <span class="fn">Pandu Ranganath</span>
+  </span>
+<time datetime="2016-10-08T16:00:00-07:00" pubdate>Sat 08 October 2016</time></p>    </footer>
+  </article>
+
+</div>
+<aside class="sidebar">
+    <section id="social-sidebar-top">
+    </section>
+    <section>
+    <h1>Artículos recientes</h1>
+    <ul id="recent_posts">
+        <li class="post">
+        <a href="./character-recognition-similar-to-what-usps-uses.html">Character Recognition (similar to what USPS uses)</a>
+        </li>
+        <li class="post">
+        <a href="./cohort-analysis.html">Cohort Analysis</a>
+        </li>
+        <li class="post">
+        <a href="./healthcare-accelerometer-data-case-study.html">Healthcare (Accelerometer data) case study</a>
+        </li>
+        <li class="post">
+        <a href="./beginners-guide-to-learning-data-science.html">Beginner's guide to learning Data Science</a>
+        </li>
+    </ul>
+    </section>
+        <section>
+        <h1>Categorías</h1>
+        <ul id="recent_posts">
+            <li><a href="./category/data-science.html">Data Science</a></li>
+        </ul>
+        </section>
+ 
+    <section>
+    <h1>Tags</h1>
+    </section>
+
+
+    <section>
+        <h1>Social</h2>
+        <ul>
+            <li><a href="https://www.linkedin.com/in/pandu" target="_blank">LinkedIN</a></li>
+            <li><a href="pandu.ranganath@gmail.com" target="_blank">email</a></li>
+        <li><a href="techflux.github.io/" type="application/rss+xml" rel="alternate">RSS</a></li>
+        </ul>
+    </section>
+    <section>
+        <h1>Blogroll</h2>
+        <ul>
+            <li><a href="@pandu.ranganath@gmail.com" target="_blank">Contact</a></li>
+            <li><a href="#" target="_blank">You can modify those links in your config file</a></li>
+        </ul>
+    </section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Pandu Ranganath -
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span> - 
+  El contenido de este blog está bajo <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.es_CO">Licencia Creative Commons Atribución-CompartirIgual 3.0 Unported</a>.
+</p></footer>
+</body>
+</html>
