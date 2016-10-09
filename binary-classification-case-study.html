@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Binary Classification Case Study</title>
+  <meta name="author" content="Pandu Ranganath">
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="./favicon.png" rel="icon">
+  <link href="./theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+  <script src="./theme/js/modernizr-2.0.js"></script>
+  <script src="./theme/js/ender.js"></script>
+  <script src="./theme/js/octopress.js" type="text/javascript"></script>
+
+  <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+  rel="stylesheet" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <link href='http://fonts.googleapis.com/css?family=Roboto:300,100' rel='stylesheet' type='text/css'>
+</head>
+
+<body>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+</ul>
+
+<!-- TODO: add search here
+<form action="" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:." />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+-->
+
+<ul class="main-navigation">
+    <!-- TODO: add categories here? -->
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div>
+  <article class="hentry" role="article">
+<header>
+      <h1 class="entry-title">Binary Classification Case Study</h1>
+      <p class="meta"><time datetime="2016-10-09T01:00:00-07:00" pubdate>Sun 09 October 2016</time></p>
+</header>
+
+  <div class="entry-content"><p><strong>Note</strong>: The code here is from Jason Brownlee's machine_learning_mastery_with_python book. It's slightly updated and documented for my educational purpose.</p>
+<p>You can get the data set from: [Sonar Mines vs Rocks dataset](https://archive.ics.uci.edu/ml/datasets/Connectionist+Bench+(Sonar,+Mines+vs.+Rocks)</p>
+<p>The file "sonar.mines" contains 111 patterns obtained by bouncing sonar signals off a metal cylinder at various angles and under various conditions. The file "sonar.rocks" contains 97 patterns obtained from rocks under similar conditions. The transmitted sonar signal is a frequency-modulated chirp, rising in frequency. The data set contains signals obtained from a variety of different aspect angles, spanning 90 degrees for the cylinder and 180 degrees for the rock. </p>
+<p>Each pattern is a set of 60 numbers in the range 0.0 to 1.0. Each number represents the energy within a particular frequency band, integrated over a certain period of time. The integration aperture for higher frequencies occur later in time, since these frequencies are transmitted later during the chirp. </p>
+<p>The label associated with each record contains the letter "R" if the object is a rock and "M" if it is a mine (metal cylinder). The numbers in the labels are in increasing order of aspect angle, but they do not encode the angle directly</p>
+<div class="highlight"><pre><span></span><span class="c1"># Load libraries</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+<span class="kn">import</span> <span class="nn">pandas</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">pandas.tools.plotting</span> <span class="kn">import</span> <span class="n">scatter_matrix</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">StandardScaler</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">cross_validation</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">classification_report</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">confusion_matrix</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">accuracy_score</span>
+<span class="kn">from</span> <span class="nn">sklearn.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span> <span class="nn">sklearn.grid_search</span> <span class="kn">import</span> <span class="n">GridSearchCV</span>
+<span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">LogisticRegression</span>
+<span class="kn">from</span> <span class="nn">sklearn.tree</span> <span class="kn">import</span> <span class="n">DecisionTreeClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="kn">import</span> <span class="n">KNeighborsClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.discriminant_analysis</span> <span class="kn">import</span> <span class="n">LinearDiscriminantAnalysis</span>
+<span class="kn">from</span> <span class="nn">sklearn.naive_bayes</span> <span class="kn">import</span> <span class="n">GaussianNB</span>
+<span class="kn">from</span> <span class="nn">sklearn.svm</span> <span class="kn">import</span> <span class="n">SVC</span>
+<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">AdaBoostClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">GradientBoostingClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">ExtraTreesClassifier</span>
+
+<span class="c1"># Set figure size big</span>
+<span class="c1"># Get current size</span>
+<span class="n">fig_size</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span>
+
+<span class="c1"># Set figure width to 12 and height to 9</span>
+<span class="n">fig_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">fig_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig_size</span>
+
+<span class="c1"># Set font size</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">&quot;font&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Step 2: Load the Dataset</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://goo.gl/NXoJfR&quot;</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Step 3: Analyze the data</span>
+<span class="c1"># shape</span>
+<span class="k">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+<span class="c1"># types</span>
+<span class="n">pandas</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span> <span class="s1">&#39;display.max_rows&#39;</span> <span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">dtypes</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>(208, 61)
+0     float64
+1     float64
+2     float64
+3     float64
+4     float64
+5     float64
+6     float64
+7     float64
+8     float64
+9     float64
+10    float64
+11    float64
+12    float64
+13    float64
+14    float64
+15    float64
+16    float64
+17    float64
+18    float64
+19    float64
+20    float64
+21    float64
+22    float64
+23    float64
+24    float64
+25    float64
+26    float64
+27    float64
+28    float64
+29    float64
+30    float64
+31    float64
+32    float64
+33    float64
+34    float64
+35    float64
+36    float64
+37    float64
+38    float64
+39    float64
+40    float64
+41    float64
+42    float64
+43    float64
+44    float64
+45    float64
+46    float64
+47    float64
+48    float64
+49    float64
+50    float64
+51    float64
+52    float64
+53    float64
+54    float64
+55    float64
+56    float64
+57    float64
+58    float64
+59    float64
+60     object
+dtype: object
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># head</span>
+<span class="n">pandas</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span> <span class="s1">&#39;display.width&#39;</span> <span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>        0       1       2       3       4       5       6       7       8       9  ...      51  \
+0   0.0200  0.0371  0.0428  0.0207  0.0954  0.0986  0.1539  0.1601  0.3109  0.2111 ...  0.0027   
+1   0.0453  0.0523  0.0843  0.0689  0.1183  0.2583  0.2156  0.3481  0.3337  0.2872 ...  0.0084   
+2   0.0262  0.0582  0.1099  0.1083  0.0974  0.2280  0.2431  0.3771  0.5598  0.6194 ...  0.0232   
+3   0.0100  0.0171  0.0623  0.0205  0.0205  0.0368  0.1098  0.1276  0.0598  0.1264 ...  0.0121   
+4   0.0762  0.0666  0.0481  0.0394  0.0590  0.0649  0.1209  0.2467  0.3564  0.4459 ...  0.0031   
+5   0.0286  0.0453  0.0277  0.0174  0.0384  0.0990  0.1201  0.1833  0.2105  0.3039 ...  0.0045   
+6   0.0317  0.0956  0.1321  0.1408  0.1674  0.1710  0.0731  0.1401  0.2083  0.3513 ...  0.0201   
+7   0.0519  0.0548  0.0842  0.0319  0.1158  0.0922  0.1027  0.0613  0.1465  0.2838 ...  0.0081   
+8   0.0223  0.0375  0.0484  0.0475  0.0647  0.0591  0.0753  0.0098  0.0684  0.1487 ...  0.0145   
+9   0.0164  0.0173  0.0347  0.0070  0.0187  0.0671  0.1056  0.0697  0.0962  0.0251 ...  0.0090   
+10  0.0039  0.0063  0.0152  0.0336  0.0310  0.0284  0.0396  0.0272  0.0323  0.0452 ...  0.0062   
+11  0.0123  0.0309  0.0169  0.0313  0.0358  0.0102  0.0182  0.0579  0.1122  0.0835 ...  0.0133   
+12  0.0079  0.0086  0.0055  0.0250  0.0344  0.0546  0.0528  0.0958  0.1009  0.1240 ...  0.0176   
+13  0.0090  0.0062  0.0253  0.0489  0.1197  0.1589  0.1392  0.0987  0.0955  0.1895 ...  0.0059   
+14  0.0124  0.0433  0.0604  0.0449  0.0597  0.0355  0.0531  0.0343  0.1052  0.2120 ...  0.0083   
+15  0.0298  0.0615  0.0650  0.0921  0.1615  0.2294  0.2176  0.2033  0.1459  0.0852 ...  0.0031   
+16  0.0352  0.0116  0.0191  0.0469  0.0737  0.1185  0.1683  0.1541  0.1466  0.2912 ...  0.0346   
+17  0.0192  0.0607  0.0378  0.0774  0.1388  0.0809  0.0568  0.0219  0.1037  0.1186 ...  0.0331   
+18  0.0270  0.0092  0.0145  0.0278  0.0412  0.0757  0.1026  0.1138  0.0794  0.1520 ...  0.0084   
+19  0.0126  0.0149  0.0641  0.1732  0.2565  0.2559  0.2947  0.4110  0.4983  0.5920 ...  0.0092
+
+        52      53      54      55      56      57      58      59  60  
+0   0.0065  0.0159  0.0072  0.0167  0.0180  0.0084  0.0090  0.0032   R  
+1   0.0089  0.0048  0.0094  0.0191  0.0140  0.0049  0.0052  0.0044   R  
+2   0.0166  0.0095  0.0180  0.0244  0.0316  0.0164  0.0095  0.0078   R  
+3   0.0036  0.0150  0.0085  0.0073  0.0050  0.0044  0.0040  0.0117   R  
+4   0.0054  0.0105  0.0110  0.0015  0.0072  0.0048  0.0107  0.0094   R  
+5   0.0014  0.0038  0.0013  0.0089  0.0057  0.0027  0.0051  0.0062   R  
+6   0.0248  0.0131  0.0070  0.0138  0.0092  0.0143  0.0036  0.0103   R  
+7   0.0120  0.0045  0.0121  0.0097  0.0085  0.0047  0.0048  0.0053   R  
+8   0.0128  0.0145  0.0058  0.0049  0.0065  0.0093  0.0059  0.0022   R  
+9   0.0223  0.0179  0.0084  0.0068  0.0032  0.0035  0.0056  0.0040   R  
+10  0.0120  0.0052  0.0056  0.0093  0.0042  0.0003  0.0053  0.0036   R  
+11  0.0265  0.0224  0.0074  0.0118  0.0026  0.0092  0.0009  0.0044   R  
+12  0.0127  0.0088  0.0098  0.0019  0.0059  0.0058  0.0059  0.0032   R  
+13  0.0095  0.0194  0.0080  0.0152  0.0158  0.0053  0.0189  0.0102   R  
+14  0.0057  0.0174  0.0188  0.0054  0.0114  0.0196  0.0147  0.0062   R  
+15  0.0153  0.0071  0.0212  0.0076  0.0152  0.0049  0.0200  0.0073   R  
+16  0.0158  0.0154  0.0109  0.0048  0.0095  0.0015  0.0073  0.0067   R  
+17  0.0131  0.0120  0.0108  0.0024  0.0045  0.0037  0.0112  0.0075   R  
+18  0.0010  0.0018  0.0068  0.0039  0.0120  0.0132  0.0070  0.0088   R  
+19  0.0035  0.0098  0.0121  0.0006  0.0181  0.0094  0.0116  0.0063   R
+
+[20 rows x 61 columns]
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Summarize the data</span>
+<span class="c1"># descriptions, change precision to 3 places</span>
+<span class="n">pandas</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span> <span class="s1">&#39;precision&#39;</span> <span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">describe</span><span class="p">())</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>            0          1        2        3        4        5        6        7        8        9   \
+count  208.000  2.080e+02  208.000  208.000  208.000  208.000  208.000  208.000  208.000  208.000   
+mean     0.029  3.844e-02    0.044    0.054    0.075    0.105    0.122    0.135    0.178    0.208   
+std      0.023  3.296e-02    0.038    0.047    0.056    0.059    0.062    0.085    0.118    0.134   
+min      0.002  6.000e-04    0.002    0.006    0.007    0.010    0.003    0.005    0.007    0.011   
+25%      0.013  1.645e-02    0.019    0.024    0.038    0.067    0.081    0.080    0.097    0.111   
+50%      0.023  3.080e-02    0.034    0.044    0.062    0.092    0.107    0.112    0.152    0.182   
+75%      0.036  4.795e-02    0.058    0.065    0.100    0.134    0.154    0.170    0.233    0.269   
+max      0.137  2.339e-01    0.306    0.426    0.401    0.382    0.373    0.459    0.683    0.711
+
+         ...           50         51         52       53         54         55         56  \
+count    ...      208.000  2.080e+02  2.080e+02  208.000  2.080e+02  2.080e+02  2.080e+02   
+mean     ...        0.016  1.342e-02  1.071e-02    0.011  9.290e-03  8.222e-03  7.820e-03   
+std      ...        0.012  9.634e-03  7.060e-03    0.007  7.088e-03  5.736e-03  5.785e-03   
+min      ...        0.000  8.000e-04  5.000e-04    0.001  6.000e-04  4.000e-04  3.000e-04   
+25%      ...        0.008  7.275e-03  5.075e-03    0.005  4.150e-03  4.400e-03  3.700e-03   
+50%      ...        0.014  1.140e-02  9.550e-03    0.009  7.500e-03  6.850e-03  5.950e-03   
+75%      ...        0.021  1.673e-02  1.490e-02    0.015  1.210e-02  1.058e-02  1.043e-02   
+max      ...        0.100  7.090e-02  3.900e-02    0.035  4.470e-02  3.940e-02  3.550e-02
+
+              57         58         59  
+count  2.080e+02  2.080e+02  2.080e+02  
+mean   7.949e-03  7.941e-03  6.507e-03  
+std    6.470e-03  6.181e-03  5.031e-03  
+min    3.000e-04  1.000e-04  6.000e-04  
+25%    3.600e-03  3.675e-03  3.100e-03  
+50%    5.800e-03  6.400e-03  5.300e-03  
+75%    1.035e-02  1.033e-02  8.525e-03  
+max    4.400e-02  3.640e-02  4.390e-02
+
+[8 rows x 60 columns]
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Class Distribution</span>
+<span class="c1"># class distribution</span>
+<span class="k">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>60
+M    111
+R     97
+dtype: int64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1">#We can see that the classes are reasonably balanced between M (mines) and R (rocks)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Step 3.2: Unimodal Data Visualizations</span>
+<span class="c1"># histograms</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">sharex</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">xlabelsize</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ylabelsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_8_0.png" /></p>
+<div class="highlight"><pre><span></span><span class="c1"># density</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span> <span class="s1">&#39;density&#39;</span> <span class="p">,</span> <span class="n">subplots</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+<span class="n">fontsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_9_0.png" /></p>
+<h3>This is useful, you can see that many of the attributes have a skewed distribution. A power transform like a Box-Cox transform that can correct for the skew in distributions might be useful.</h3>
+<div class="highlight"><pre><span></span><span class="c1"># Look at whisker plots to see the spred of the data</span>
+<span class="c1"># box and whisker plots</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span> <span class="s1">&#39;box&#39;</span> <span class="p">,</span> <span class="n">subplots</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+<span class="n">fontsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_11_0.png" /></p>
+<h3>We can see that attributes do have quite di↵erent spreads. Given the scales are the same, it may suggest some benefit in standardizing the data for modeling to get all of the means lined up.</h3>
+<h3>Step 3.3 - Multimodal Data Visualizations</h3>
+<div class="highlight"><pre><span></span><span class="c1"># Let’s visualize the correlations between the attributes.</span>
+<span class="c1"># correlation matrix</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+<span class="n">cax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">matshow</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">corr</span><span class="p">(),</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span> <span class="s1">&#39;none&#39;</span> <span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_14_0.png" /></p>
+<p>It looks like there is also some structure in the order of the attributes. </p>
+<p>The red around the diagonal suggests that attributes that are next to each other are generally more correlated
+with each other. </p>
+<p>The blue patches also suggest some moderate negative correlation the further attributes are away from each other in the ordering. </p>
+<p>This makes sense if the order of the attributes refers to the angle of sensors for the sonar chirp.</p>
+<h1>Step 4: Validation Dataset</h1>
+<div class="highlight"><pre><span></span><span class="c1"># Split-out validation dataset</span>
+<span class="n">array</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">values</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">array</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">60</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">array</span><span class="p">[:,</span><span class="mi">60</span><span class="p">]</span>
+<span class="n">validation_size</span> <span class="o">=</span> <span class="mf">0.20</span>
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">X_train</span><span class="p">,</span> <span class="n">X_validation</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">,</span> <span class="n">Y_validation</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span>
+<span class="n">test_size</span><span class="o">=</span><span class="n">validation_size</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+</pre></div>
+
+
+<h1>Step 5: Evaluate Algorithms</h1>
+<div class="highlight"><pre><span></span><span class="c1"># Test options and evaluation metric</span>
+<span class="n">num_folds</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">num_instances</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">scoring</span> <span class="o">=</span> <span class="s1">&#39;accuracy&#39;</span>
+</pre></div>
+
+
+<p>Let’s create a baseline of performance on this problem and spot-check a number of different algorithms. </p>
+<p>We will select a suite of different algorithms capable of working on this classification problem. </p>
+<p><strong>The six algorithms selected include:</strong>
+1. Linear Algorithms: Logistic Regression (LR) and Linear Discriminant Analysis (LDA).
+2. Nonlinear Algorithms: Classification and Regression Trees (CART), Support Vector
+3. Machines (SVM), Gaussian Naive Bayes (NB) and K-Nearest Neighbors (KNN).</p>
+<div class="highlight"><pre><span></span><span class="c1"># Spot-Check Algorithms</span>
+<span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;LR&#39;</span> <span class="p">,</span> <span class="n">LogisticRegression</span><span class="p">()))</span>
+<span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;LDA&#39;</span> <span class="p">,</span> <span class="n">LinearDiscriminantAnalysis</span><span class="p">()))</span>
+<span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;KNN&#39;</span> <span class="p">,</span> <span class="n">KNeighborsClassifier</span><span class="p">()))</span>
+<span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;CART&#39;</span> <span class="p">,</span> <span class="n">DecisionTreeClassifier</span><span class="p">()))</span>
+<span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;NB&#39;</span> <span class="p">,</span> <span class="n">GaussianNB</span><span class="p">()))</span>
+<span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;SVM&#39;</span> <span class="p">,</span> <span class="n">SVC</span><span class="p">()))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># display the mean and standard deviation of accuracy for each algorithm as we calculate it and</span>
+<span class="c1"># collect the results for use later.</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
+ <span class="n">kfold</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="o">.</span><span class="n">KFold</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">num_instances</span><span class="p">,</span> <span class="n">n_folds</span><span class="o">=</span><span class="n">num_folds</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+ <span class="n">cv_results</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="o">.</span><span class="n">cross_val_score</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">kfold</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="n">scoring</span><span class="p">)</span>
+ <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cv_results</span><span class="p">)</span>
+ <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+ <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%f</span><span class="s2"> (</span><span class="si">%f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">cv_results</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">cv_results</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+ <span class="k">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">LR</span><span class="o">:</span> <span class="mf">0.782721</span> <span class="o">(</span><span class="mf">0.093796</span><span class="o">)</span>
+<span class="n">LDA</span><span class="o">:</span> <span class="mf">0.746324</span> <span class="o">(</span><span class="mf">0.117854</span><span class="o">)</span>
+<span class="n">KNN</span><span class="o">:</span> <span class="mf">0.808088</span> <span class="o">(</span><span class="mf">0.067507</span><span class="o">)</span>
+<span class="n">CART</span><span class="o">:</span> <span class="mf">0.718015</span> <span class="o">(</span><span class="mf">0.113734</span><span class="o">)</span>
+<span class="n">NB</span><span class="o">:</span> <span class="mf">0.648897</span> <span class="o">(</span><span class="mf">0.141868</span><span class="o">)</span>
+<span class="n">SVM</span><span class="o">:</span> <span class="mf">0.608824</span> <span class="o">(</span><span class="mf">0.118656</span><span class="o">)</span>
+</pre></div>
+
+
+<p>Running the example provides the output below. The results suggest That both Logistic
+Regression and K-Nearest Neighbors may be worth further study</p>
+<p>These are just mean accuracy values. It is always wise to look at the distribution of accuracy
+values calculated across cross validation folds. We can do that graphically using box and whisker
+plots.</p>
+<div class="highlight"><pre><span></span><span class="c1"># Compare Algorithms</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span> <span class="s1">&#39;Algorithm Comparison&#39;</span> <span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_25_0.png" /></p>
+<p>It is possible that the varied distribution of the attributes is having an e↵ect on the accuracy
+of algorithms such as SVM. In the next section we will repeat this spot-check with a standardized
+copy of the training dataset.</p>
+<h1>Step 6: Evaluate Algorithms: Standardize Data</h1>
+<p>We suspect that the differing distributions of the raw data may be negatively impacting the skill
+of some of the algorithms. </p>
+<p>Let’s evaluate the same algorithms with a standardized copy of the dataset. </p>
+<p>This is where the data is transformed such that each attribute has a mean value of zero and a standard deviation of one. </p>
+<p>We also need to avoid data leakage when we transform the data. </p>
+<p>A good way to avoid leakage is to use pipelines that standardize the data and build the model for each fold in the cross validation test harness. </p>
+<p>That way we can get a fair estimation of how each model with standardized data might perform on unseen data.</p>
+<div class="highlight"><pre><span></span><span class="c1"># Standardize the dataset</span>
+<span class="n">pipelines</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">pipelines</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;ScaledLR&#39;</span> <span class="p">,</span> <span class="n">Pipeline</span><span class="p">([(</span> <span class="s1">&#39;Scaler&#39;</span> <span class="p">,</span> <span class="n">StandardScaler</span><span class="p">()),(</span> <span class="s1">&#39;LR&#39;</span> <span class="p">,</span><span class="n">LogisticRegression</span><span class="p">())])))</span>
+<span class="n">pipelines</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;ScaledLDA&#39;</span> <span class="p">,</span> <span class="n">Pipeline</span><span class="p">([(</span> <span class="s1">&#39;Scaler&#39;</span> <span class="p">,</span> <span class="n">StandardScaler</span><span class="p">()),(</span> <span class="s1">&#39;LDA&#39;</span> <span class="p">,</span> <span class="n">LinearDiscriminantAnalysis</span><span class="p">())])))</span>
+<span class="n">pipelines</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;ScaledKNN&#39;</span> <span class="p">,</span> <span class="n">Pipeline</span><span class="p">([(</span> <span class="s1">&#39;Scaler&#39;</span> <span class="p">,</span> <span class="n">StandardScaler</span><span class="p">()),(</span> <span class="s1">&#39;KNN&#39;</span> <span class="p">,</span><span class="n">KNeighborsClassifier</span><span class="p">())])))</span>
+<span class="n">pipelines</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;ScaledCART&#39;</span> <span class="p">,</span> <span class="n">Pipeline</span><span class="p">([(</span> <span class="s1">&#39;Scaler&#39;</span> <span class="p">,</span> <span class="n">StandardScaler</span><span class="p">()),(</span> <span class="s1">&#39;CART&#39;</span> <span class="p">,</span> <span class="n">DecisionTreeClassifier</span><span class="p">())])))</span>
+<span class="n">pipelines</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;ScaledNB&#39;</span> <span class="p">,</span> <span class="n">Pipeline</span><span class="p">([(</span> <span class="s1">&#39;Scaler&#39;</span> <span class="p">,</span> <span class="n">StandardScaler</span><span class="p">()),(</span> <span class="s1">&#39;NB&#39;</span> <span class="p">,</span> <span class="n">GaussianNB</span><span class="p">())])))</span>
+<span class="n">pipelines</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;ScaledSVM&#39;</span> <span class="p">,</span> <span class="n">Pipeline</span><span class="p">([(</span> <span class="s1">&#39;Scaler&#39;</span> <span class="p">,</span> <span class="n">StandardScaler</span><span class="p">()),(</span> <span class="s1">&#39;SVM&#39;</span> <span class="p">,</span> <span class="n">SVC</span><span class="p">())])))</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">pipelines</span><span class="p">:</span>
+ <span class="n">kfold</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="o">.</span><span class="n">KFold</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">num_instances</span><span class="p">,</span> <span class="n">n_folds</span><span class="o">=</span><span class="n">num_folds</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+ <span class="n">cv_results</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="o">.</span><span class="n">cross_val_score</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">kfold</span><span class="p">,</span>
+ <span class="n">scoring</span><span class="o">=</span><span class="n">scoring</span><span class="p">)</span>
+ <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cv_results</span><span class="p">)</span>
+ <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+ <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%f</span><span class="s2"> (</span><span class="si">%f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">cv_results</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">cv_results</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+ <span class="k">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">ScaledLR</span><span class="o">:</span> <span class="mf">0.734191</span> <span class="o">(</span><span class="mf">0.095885</span><span class="o">)</span>
+<span class="n">ScaledLDA</span><span class="o">:</span> <span class="mf">0.746324</span> <span class="o">(</span><span class="mf">0.117854</span><span class="o">)</span>
+<span class="n">ScaledKNN</span><span class="o">:</span> <span class="mf">0.825735</span> <span class="o">(</span><span class="mf">0.054511</span><span class="o">)</span>
+<span class="n">ScaledCART</span><span class="o">:</span> <span class="mf">0.722794</span> <span class="o">(</span><span class="mf">0.101516</span><span class="o">)</span>
+<span class="n">ScaledNB</span><span class="o">:</span> <span class="mf">0.648897</span> <span class="o">(</span><span class="mf">0.141868</span><span class="o">)</span>
+<span class="n">ScaledSVM</span><span class="o">:</span> <span class="mf">0.836397</span> <span class="o">(</span><span class="mf">0.088697</span><span class="o">)</span>
+</pre></div>
+
+
+<p>We can see that KNN is still doing well, even better than before. </p>
+<p>We can also see that the standardization of the data has lifted the skill of SVM to be the most accurate algorithm tested so far.</p>
+<div class="highlight"><pre><span></span><span class="c1"># Distribution of accuracy scores</span>
+<span class="c1"># Compare Algorithms</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span> <span class="s1">&#39;Scaled Algorithm Comparison&#39;</span> <span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_31_0.png" /></p>
+<p>The results suggest digging deeper into the SVM and KNN algorithms. It is very likely that configuration beyond the default may yield even more accurate models.</p>
+<h1>Step 7: Algorithm Tuning</h1>
+<p>we investigate tuning the parameters for two algorithms that show promise from the spot-checking in the previous 
+section: KNN and SVM.</p>
+<h2>Step 7.1 : Tuning KNN</h2>
+<p>We can start off by tuning the number of neighbors for KNN. The default number of neighbors
+is 7. Below we try all odd values of K from 1 to 21, covering the default value of 7. </p>
+<p>Each K valueis evaluated using 10-fold cross validation on the training standardized dataset.</p>
+<div class="highlight"><pre><span></span><span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+
+<span class="n">rescaledX</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+
+<span class="n">neighbors</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">13</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mi">17</span><span class="p">,</span><span class="mi">19</span><span class="p">,</span><span class="mi">21</span><span class="p">]</span>
+
+<span class="n">param_grid</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="n">neighbors</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">KNeighborsClassifier</span><span class="p">()</span>
+
+<span class="n">kfold</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="o">.</span><span class="n">KFold</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">num_instances</span><span class="p">,</span> <span class="n">n_folds</span><span class="o">=</span><span class="n">num_folds</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">grid</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">estimator</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">param_grid</span><span class="o">=</span><span class="n">param_grid</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="n">scoring</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">kfold</span><span class="p">)</span>
+<span class="n">grid_result</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">rescaledX</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Best: </span><span class="si">%f</span><span class="s2"> using </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">grid_result</span><span class="o">.</span><span class="n">best_score_</span><span class="p">,</span> <span class="n">grid_result</span><span class="o">.</span><span class="n">best_params_</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">params</span><span class="p">,</span> <span class="n">mean_score</span><span class="p">,</span> <span class="n">scores</span> <span class="ow">in</span> <span class="n">grid_result</span><span class="o">.</span><span class="n">grid_scores_</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%f</span><span class="s2"> (</span><span class="si">%f</span><span class="s2">) with: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">scores</span><span class="o">.</span><span class="n">std</span><span class="p">(),</span> <span class="n">params</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">Best</span><span class="o">:</span> <span class="mf">0.849398</span> <span class="n">using</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">1</span><span class="o">}</span>
+<span class="mf">0.850000</span> <span class="o">(</span><span class="mf">0.059686</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">1</span><span class="o">}</span>
+<span class="mf">0.837132</span> <span class="o">(</span><span class="mf">0.066014</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">3</span><span class="o">}</span>
+<span class="mf">0.837500</span> <span class="o">(</span><span class="mf">0.037377</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">5</span><span class="o">}</span>
+<span class="mf">0.763971</span> <span class="o">(</span><span class="mf">0.089374</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">7</span><span class="o">}</span>
+<span class="mf">0.751471</span> <span class="o">(</span><span class="mf">0.087051</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">9</span><span class="o">}</span>
+<span class="mf">0.733456</span> <span class="o">(</span><span class="mf">0.104831</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">11</span><span class="o">}</span>
+<span class="mf">0.733088</span> <span class="o">(</span><span class="mf">0.105806</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">13</span><span class="o">}</span>
+<span class="mf">0.727941</span> <span class="o">(</span><span class="mf">0.076148</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">15</span><span class="o">}</span>
+<span class="mf">0.709926</span> <span class="o">(</span><span class="mf">0.079287</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">17</span><span class="o">}</span>
+<span class="mf">0.722059</span> <span class="o">(</span><span class="mf">0.085088</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">19</span><span class="o">}</span>
+<span class="mf">0.710294</span> <span class="o">(</span><span class="mf">0.109505</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;n_neighbors&#39;</span><span class="o">:</span> <span class="mi">21</span><span class="o">}</span>
+</pre></div>
+
+
+<h2>Step 7.2:Tuning SVM</h2>
+<p>We can tune two key parameters of the SVM algorithm, the value of C (how much to relax the
+margin) and the type of kernel. </p>
+<p>The default for SVM (the SVC class) is to use the Radial Basis Function (RBF) kernel with a C value set to 1.0. </p>
+<p>Like with KNN, we will perform a grid search using 10-fold cross validation with a standardized copy of the training dataset. </p>
+<p>We will try a number of simpler kernel types and C values with less bias and more bias (less than and
+more than 1.0 respectively).</p>
+<div class="highlight"><pre><span></span><span class="c1"># Tune scaled SVM</span>
+<span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+<span class="n">rescaledX</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+
+<span class="n">c_values</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.7</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]</span>
+
+<span class="n">kernel_values</span> <span class="o">=</span> <span class="p">[</span> <span class="s1">&#39;linear&#39;</span> <span class="p">,</span> <span class="s1">&#39;poly&#39;</span> <span class="p">,</span> <span class="s1">&#39;rbf&#39;</span> <span class="p">,</span> <span class="s1">&#39;sigmoid&#39;</span> <span class="p">]</span>
+
+<span class="n">param_grid</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">C</span><span class="o">=</span><span class="n">c_values</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">kernel_values</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">SVC</span><span class="p">()</span>
+<span class="n">kfold</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="o">.</span><span class="n">KFold</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">num_instances</span><span class="p">,</span> <span class="n">n_folds</span><span class="o">=</span><span class="n">num_folds</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+<span class="n">grid</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">estimator</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">param_grid</span><span class="o">=</span><span class="n">param_grid</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="n">scoring</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">kfold</span><span class="p">)</span>
+<span class="n">grid_result</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">rescaledX</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Best: </span><span class="si">%f</span><span class="s2"> using </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">grid_result</span><span class="o">.</span><span class="n">best_score_</span><span class="p">,</span> <span class="n">grid_result</span><span class="o">.</span><span class="n">best_params_</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">params</span><span class="p">,</span> <span class="n">mean_score</span><span class="p">,</span> <span class="n">scores</span> <span class="ow">in</span> <span class="n">grid_result</span><span class="o">.</span><span class="n">grid_scores_</span><span class="p">:</span>
+ <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%f</span><span class="s2"> (</span><span class="si">%f</span><span class="s2">) with: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">scores</span><span class="o">.</span><span class="n">std</span><span class="p">(),</span> <span class="n">params</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">Best</span><span class="o">:</span> <span class="mf">0.867470</span> <span class="n">using</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.5</span><span class="o">}</span>
+<span class="mf">0.758456</span> <span class="o">(</span><span class="mf">0.099483</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.1</span><span class="o">}</span>
+<span class="mf">0.529412</span> <span class="o">(</span><span class="mf">0.118825</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.1</span><span class="o">}</span>
+<span class="mf">0.573162</span> <span class="o">(</span><span class="mf">0.130930</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.1</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.1</span><span class="o">}</span>
+<span class="mf">0.746324</span> <span class="o">(</span><span class="mf">0.109507</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.3</span><span class="o">}</span>
+<span class="mf">0.642647</span> <span class="o">(</span><span class="mf">0.132187</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.3</span><span class="o">}</span>
+<span class="mf">0.765809</span> <span class="o">(</span><span class="mf">0.091692</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.3</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.3</span><span class="o">}</span>
+<span class="mf">0.740074</span> <span class="o">(</span><span class="mf">0.082636</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.5</span><span class="o">}</span>
+<span class="mf">0.680147</span> <span class="o">(</span><span class="mf">0.098595</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.5</span><span class="o">}</span>
+<span class="mf">0.788235</span> <span class="o">(</span><span class="mf">0.064190</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.5</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.5</span><span class="o">}</span>
+<span class="mf">0.746691</span> <span class="o">(</span><span class="mf">0.084198</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.7</span><span class="o">}</span>
+<span class="mf">0.740074</span> <span class="o">(</span><span class="mf">0.127908</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.7</span><span class="o">}</span>
+<span class="mf">0.812500</span> <span class="o">(</span><span class="mf">0.085513</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.7</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.7</span><span class="o">}</span>
+<span class="mf">0.758824</span> <span class="o">(</span><span class="mf">0.096520</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.9</span><span class="o">}</span>
+<span class="mf">0.770221</span> <span class="o">(</span><span class="mf">0.102510</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.9</span><span class="o">}</span>
+<span class="mf">0.836397</span> <span class="o">(</span><span class="mf">0.088697</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.9</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">0.9</span><span class="o">}</span>
+<span class="mf">0.752574</span> <span class="o">(</span><span class="mf">0.098883</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.0</span><span class="o">}</span>
+<span class="mf">0.788235</span> <span class="o">(</span><span class="mf">0.108418</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.0</span><span class="o">}</span>
+<span class="mf">0.836397</span> <span class="o">(</span><span class="mf">0.088697</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.0</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.0</span><span class="o">}</span>
+<span class="mf">0.769853</span> <span class="o">(</span><span class="mf">0.106086</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.3</span><span class="o">}</span>
+<span class="mf">0.818382</span> <span class="o">(</span><span class="mf">0.107151</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.3</span><span class="o">}</span>
+<span class="mf">0.848162</span> <span class="o">(</span><span class="mf">0.080414</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.3</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.3</span><span class="o">}</span>
+<span class="mf">0.758088</span> <span class="o">(</span><span class="mf">0.092026</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.5</span><span class="o">}</span>
+<span class="mf">0.830147</span> <span class="o">(</span><span class="mf">0.110255</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.5</span><span class="o">}</span>
+<span class="mf">0.866176</span> <span class="o">(</span><span class="mf">0.091458</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.5</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.5</span><span class="o">}</span>
+<span class="mf">0.746324</span> <span class="o">(</span><span class="mf">0.090414</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.7</span><span class="o">}</span>
+<span class="mf">0.830515</span> <span class="o">(</span><span class="mf">0.116706</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.7</span><span class="o">}</span>
+<span class="mf">0.860294</span> <span class="o">(</span><span class="mf">0.088281</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.7</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">1.7</span><span class="o">}</span>
+<span class="mf">0.758456</span> <span class="o">(</span><span class="mf">0.094064</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;linear&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">2.0</span><span class="o">}</span>
+<span class="mf">0.830882</span> <span class="o">(</span><span class="mf">0.108950</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;poly&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">2.0</span><span class="o">}</span>
+<span class="mf">0.866176</span> <span class="o">(</span><span class="mf">0.095166</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;rbf&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">2.0</span><span class="o">}</span>
+<span class="mf">0.409559</span> <span class="o">(</span><span class="mf">0.073625</span><span class="o">)</span> <span class="k">with</span><span class="o">:</span> <span class="o">{</span><span class="s1">&#39;kernel&#39;</span><span class="o">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="o">,</span> <span class="s1">&#39;C&#39;</span><span class="o">:</span> <span class="mf">2.0</span><span class="o">}</span>
+</pre></div>
+
+
+<h1>Step 8: Ensemble Methods</h1>
+<p>In this section we will evaluate four di↵erent ensemble machine learning
+algorithms, two boosting and two bagging methods:</p>
+<ol>
+<li>Boosting Methods: AdaBoost (AB) and Gradient Boosting (GBM).</li>
+<li>Bagging Methods: Random Forests (RF) and Extra Trees (ET).</li>
+</ol>
+<p>We will use the same test harness as before, 10-fold cross validation. No data standardization
+is used in this case because all four ensemble algorithms are based on decision trees that are
+less sensitive to data distributions.</p>
+<div class="highlight"><pre><span></span><span class="c1"># ensembles</span>
+<span class="n">ensembles</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">ensembles</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;AB&#39;</span> <span class="p">,</span> <span class="n">AdaBoostClassifier</span><span class="p">()))</span>
+<span class="n">ensembles</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;GBM&#39;</span> <span class="p">,</span> <span class="n">GradientBoostingClassifier</span><span class="p">()))</span>
+<span class="n">ensembles</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;RF&#39;</span> <span class="p">,</span> <span class="n">RandomForestClassifier</span><span class="p">()))</span>
+<span class="n">ensembles</span><span class="o">.</span><span class="n">append</span><span class="p">((</span> <span class="s1">&#39;ET&#39;</span> <span class="p">,</span> <span class="n">ExtraTreesClassifier</span><span class="p">()))</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">ensembles</span><span class="p">:</span>
+ <span class="n">kfold</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="o">.</span><span class="n">KFold</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">num_instances</span><span class="p">,</span> <span class="n">n_folds</span><span class="o">=</span><span class="n">num_folds</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+ <span class="n">cv_results</span> <span class="o">=</span> <span class="n">cross_validation</span><span class="o">.</span><span class="n">cross_val_score</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">kfold</span><span class="p">,</span>
+ <span class="n">scoring</span><span class="o">=</span><span class="n">scoring</span><span class="p">)</span>
+ <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cv_results</span><span class="p">)</span>
+ <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+ <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%f</span><span class="s2"> (</span><span class="si">%f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">cv_results</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">cv_results</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+ <span class="k">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">AB</span><span class="o">:</span> <span class="mf">0.819853</span> <span class="o">(</span><span class="mf">0.058293</span><span class="o">)</span>
+<span class="n">GBM</span><span class="o">:</span> <span class="mf">0.841912</span> <span class="o">(</span><span class="mf">0.103125</span><span class="o">)</span>
+<span class="n">RF</span><span class="o">:</span> <span class="mf">0.766176</span> <span class="o">(</span><span class="mf">0.088054</span><span class="o">)</span>
+<span class="n">ET</span><span class="o">:</span> <span class="mf">0.818750</span> <span class="o">(</span><span class="mf">0.061300</span><span class="o">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Compare Algorithms</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span> <span class="s1">&#39;Ensemble Algorithm Comparison&#39;</span> <span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_42_0.png" /></p>
+<p>The results suggest GBM may be worthy of further study, with a strong mean and a spread
+that skews up towards high 90s (%) in accuracy.</p>
+<h1>Step 9: Finalize the Model</h1>
+<p>The SVM showed the most promise as a low complexity and stable model for this problem. In
+this section we will finalize the model by training it on the entire training dataset and make
+predictions for the hold-out validation dataset to confirm our findings. A part of the findings was
+that SVM performs better when the dataset is standardized so that all attributes have a mean
+value of zero and a standard deviation of one. We can calculate this from the entire training
+dataset and apply the same transform to the input attributes from the validation dataset.</p>
+<div class="highlight"><pre><span></span><span class="c1"># prepare the model</span>
+<span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+<span class="n">rescaledX</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">SVC</span><span class="p">(</span><span class="n">C</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">rescaledX</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">)</span>
+
+<span class="c1"># estimate accuracy on validation dataset</span>
+<span class="n">rescaledValidationX</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_validation</span><span class="p">)</span>
+
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">rescaledValidationX</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">Y_validation</span><span class="p">,</span> <span class="n">predictions</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">(</span><span class="n">Y_validation</span><span class="p">,</span> <span class="n">predictions</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">Y_validation</span><span class="p">,</span> <span class="n">predictions</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>0.857142857143
+[[23  4]
+ [ 2 13]]
+             precision    recall  f1-score   support
+
+          M       0.92      0.85      0.88        27
+          R       0.76      0.87      0.81        15
+
+avg / total       0.86      0.86      0.86        42
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>
+</pre></div></div>
+    <footer>
+<p class="meta">
+  <span class="byline author vcard">
+    Posted by <span class="fn">Pandu Ranganath</span>
+  </span>
+<time datetime="2016-10-09T01:00:00-07:00" pubdate>Sun 09 October 2016</time></p>    </footer>
+  </article>
+
+</div>
+<aside class="sidebar">
+    <section id="social-sidebar-top">
+    </section>
+    <section>
+    <h1>Artículos recientes</h1>
+    <ul id="recent_posts">
+        <li class="post">
+        <a href="./binary-classification-case-study.html">Binary Classification Case Study</a>
+        </li>
+        <li class="post">
+        <a href="./parkinsons-disease-predictor.html">Parkinson’s disease predictor</a>
+        </li>
+        <li class="post">
+        <a href="./character-recognition-similar-to-what-usps-uses.html">Character Recognition (similar to what USPS uses)</a>
+        </li>
+        <li class="post">
+        <a href="./cohort-analysis.html">Cohort Analysis</a>
+        </li>
+        <li class="post">
+        <a href="./healthcare-accelerometer-data-case-study.html">Healthcare (Accelerometer data) case study</a>
+        </li>
+    </ul>
+    </section>
+        <section>
+        <h1>Categorías</h1>
+        <ul id="recent_posts">
+            <li><a href="./category/data-science.html">Data Science</a></li>
+        </ul>
+        </section>
+ 
+    <section>
+    <h1>Tags</h1>
+    </section>
+
+
+    <section>
+        <h1>Social</h2>
+        <ul>
+            <li><a href="https://www.linkedin.com/in/pandu" target="_blank">LinkedIN</a></li>
+            <li><a href="pandu.ranganath@gmail.com" target="_blank">email</a></li>
+        <li><a href="techflux.github.io/" type="application/rss+xml" rel="alternate">RSS</a></li>
+        </ul>
+    </section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Pandu Ranganath -
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span> - 
+  El contenido de este blog está bajo <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.es_CO">Licencia Creative Commons Atribución-CompartirIgual 3.0 Unported</a>.
+</p></footer>
+</body>
+</html>
