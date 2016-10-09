@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Healthcare (Accelerometer data) case study</title>
+  <meta name="author" content="Pandu Ranganath">
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="./favicon.png" rel="icon">
+  <link href="./theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+  <script src="./theme/js/modernizr-2.0.js"></script>
+  <script src="./theme/js/ender.js"></script>
+  <script src="./theme/js/octopress.js" type="text/javascript"></script>
+
+  <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+  rel="stylesheet" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <link href='http://fonts.googleapis.com/css?family=Roboto:300,100' rel='stylesheet' type='text/css'>
+</head>
+
+<body>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+</ul>
+
+<!-- TODO: add search here
+<form action="" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:." />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+-->
+
+<ul class="main-navigation">
+    <!-- TODO: add categories here? -->
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div>
+  <article class="hentry" role="article">
+<header>
+      <h1 class="entry-title">Healthcare (Accelerometer data) case study</h1>
+      <p class="meta"><time datetime="2016-10-08T14:00:00-07:00" pubdate>Sat 08 October 2016</time></p>
+</header>
+
+  <div class="entry-content"><p>Human activity monitoring is a growing field within data science. It has practical use within the healthcare industry, particular with tracking the elderly to make sure they don't end up doing things which might cause them to hurt themselves. Governments are also very interested in it do that they can detect unusual crowd activities, perimeter breaches, or the identification of specific activities, such as loitering, littering, or fighting. Fitness apps also make use of activity monitoring to better estimate the amount of calories used by the body during a period of time.</p>
+<p>In this project, we will be training a random forest against a public domain Human Activity Dataset titled <a href="http://groupware.les.inf.puc-rio.br/har#dataset">Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements</a>, containing 165,633, one of which is invalid. Within the dataset, there are five target activities:</p>
+<ul>
+<li>Sitting</li>
+<li>Sitting Down</li>
+<li>Standing</li>
+<li>Standing Up</li>
+<li>Walking</li>
+</ul>
+<p>These activities were captured from four people wearing accelerometers mounted on their waist, left thigh, right arm, and right ankle. To get started:</p>
+<p>Acquire the <a href="http://groupware.les.inf.puc-rio.br/har#dataset">DLA HAR  Dataset</a> from their webpage. Be sure to get the dataset-har-PUC-Rio-ugulino.zip file and not the weight lifting one.</p>
+<h4>Based on the data that's collected, we'll predict the type of activity the user was performing (see the bullet list above)</h4>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="kn">as</span> <span class="nn">sns</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+
+
+<span class="c1"># Grab the DLA HAR dataset from:</span>
+<span class="c1"># http://groupware.les.inf.puc-rio.br/har</span>
+<span class="c1"># http://groupware.les.inf.puc-rio.br/static/har/dataset-har-PUC-Rio-ugulino.zip</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1">#</span>
+<span class="c1">#  Load up the dataset into dataframe &#39;X&#39;</span>
+<span class="c1">#</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;dataset-har-PUC-Rio-ugulino.csv&#39;</span><span class="p">,</span> <span class="n">sep</span> <span class="o">=</span> <span class="s1">&#39;\;&#39;</span><span class="p">)</span>
+<span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>/Users/Pandu/anaconda/lib/python3.5/site-packages/ipykernel/__main__.py:5: ParserWarning: Falling back to the &#39;python&#39; engine because the &#39;c&#39; engine does not support regex separators (separators &gt; 1 char and different from &#39;\s+&#39; are interpreted as regex); you can avoid this warning by specifying engine=&#39;python&#39;.
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>user</th>
+      <th>gender</th>
+      <th>age</th>
+      <th>how_tall_in_meters</th>
+      <th>weight</th>
+      <th>body_mass_index</th>
+      <th>x1</th>
+      <th>y1</th>
+      <th>z1</th>
+      <th>x2</th>
+      <th>y2</th>
+      <th>z2</th>
+      <th>x3</th>
+      <th>y3</th>
+      <th>z3</th>
+      <th>x4</th>
+      <th>y4</th>
+      <th>z4</th>
+      <th>class</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>debora</td>
+      <td>Woman</td>
+      <td>46</td>
+      <td>1,62</td>
+      <td>75</td>
+      <td>28,6</td>
+      <td>-3</td>
+      <td>92</td>
+      <td>-63</td>
+      <td>-23</td>
+      <td>18</td>
+      <td>-19</td>
+      <td>5</td>
+      <td>104</td>
+      <td>-92</td>
+      <td>-150</td>
+      <td>-103</td>
+      <td>-147</td>
+      <td>sitting</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>debora</td>
+      <td>Woman</td>
+      <td>46</td>
+      <td>1,62</td>
+      <td>75</td>
+      <td>28,6</td>
+      <td>-3</td>
+      <td>94</td>
+      <td>-64</td>
+      <td>-21</td>
+      <td>18</td>
+      <td>-18</td>
+      <td>-14</td>
+      <td>104</td>
+      <td>-90</td>
+      <td>-149</td>
+      <td>-104</td>
+      <td>-145</td>
+      <td>sitting</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>debora</td>
+      <td>Woman</td>
+      <td>46</td>
+      <td>1,62</td>
+      <td>75</td>
+      <td>28,6</td>
+      <td>-1</td>
+      <td>97</td>
+      <td>-61</td>
+      <td>-12</td>
+      <td>20</td>
+      <td>-15</td>
+      <td>-13</td>
+      <td>104</td>
+      <td>-90</td>
+      <td>-151</td>
+      <td>-104</td>
+      <td>-144</td>
+      <td>sitting</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>debora</td>
+      <td>Woman</td>
+      <td>46</td>
+      <td>1,62</td>
+      <td>75</td>
+      <td>28,6</td>
+      <td>-2</td>
+      <td>96</td>
+      <td>-57</td>
+      <td>-15</td>
+      <td>21</td>
+      <td>-16</td>
+      <td>-13</td>
+      <td>104</td>
+      <td>-89</td>
+      <td>-153</td>
+      <td>-103</td>
+      <td>-142</td>
+      <td>sitting</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>debora</td>
+      <td>Woman</td>
+      <td>46</td>
+      <td>1,62</td>
+      <td>75</td>
+      <td>28,6</td>
+      <td>-1</td>
+      <td>96</td>
+      <td>-61</td>
+      <td>-13</td>
+      <td>20</td>
+      <td>-15</td>
+      <td>-13</td>
+      <td>104</td>
+      <td>-89</td>
+      <td>-153</td>
+      <td>-104</td>
+      <td>-143</td>
+      <td>sitting</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># Get the list of columns and data types</span>
+<span class="n">X</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+RangeIndex: 165633 entries, 0 to 165632
+Data columns (total 19 columns):
+user                  165633 non-null object
+gender                165633 non-null object
+age                   165633 non-null int64
+how_tall_in_meters    165633 non-null object
+weight                165633 non-null int64
+body_mass_index       165633 non-null object
+x1                    165633 non-null int64
+y1                    165633 non-null int64
+z1                    165633 non-null int64
+x2                    165633 non-null int64
+y2                    165633 non-null int64
+z2                    165633 non-null int64
+x3                    165633 non-null int64
+y3                    165633 non-null int64
+z3                    165633 non-null int64
+x4                    165633 non-null int64
+y4                    165633 non-null int64
+z4                    165633 non-null object
+class                 165633 non-null object
+dtypes: int64(13), object(6)
+memory usage: 24.0+ MB
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Get the unique counts by gender</span>
+
+<span class="n">X</span><span class="o">.</span><span class="n">gender</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>Woman    101374
+Man       64259
+Name: gender, dtype: int64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1">#</span>
+<span class="c1"># Encode the gender column, 0 as male, 1 as female</span>
+<span class="c1">#</span>
+<span class="n">X</span><span class="o">.</span><span class="n">gender</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">gender</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="s1">&#39;Man&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Woman&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">})</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="o">.</span><span class="n">gender</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>0    101374
+1     64259
+Name: gender, dtype: int64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;class&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>sitting        50631
+standing       47370
+walking        43390
+standingup     12415
+sittingdown    11827
+Name: class, dtype: int64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Encode class to integer values</span>
+<span class="n">X</span><span class="p">[</span><span class="s1">&#39;class&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="s1">&#39;class&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="s1">&#39;sitting&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;standing&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;walking&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;standingup&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;sittingdown&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">})</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;class&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>0    50631
+1    47370
+2    43390
+3    12415
+4    11827
+Name: class, dtype: int64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1">#</span>
+<span class="c1"># Clean up any column with commas in it</span>
+<span class="c1"># so that they&#39;re properly represented as decimals instead</span>
+<span class="c1">#</span>
+<span class="n">X</span><span class="p">[</span><span class="s1">&#39;how_tall_in_meters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="s1">&#39;how_tall_in_meters&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+<span class="n">X</span><span class="p">[</span><span class="s1">&#39;body_mass_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="s1">&#39;body_mass_index&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>user</th>
+      <th>gender</th>
+      <th>age</th>
+      <th>how_tall_in_meters</th>
+      <th>weight</th>
+      <th>body_mass_index</th>
+      <th>x1</th>
+      <th>y1</th>
+      <th>z1</th>
+      <th>x2</th>
+      <th>y2</th>
+      <th>z2</th>
+      <th>x3</th>
+      <th>y3</th>
+      <th>z3</th>
+      <th>x4</th>
+      <th>y4</th>
+      <th>z4</th>
+      <th>class</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>debora</td>
+      <td>0</td>
+      <td>46</td>
+      <td>1.62</td>
+      <td>75</td>
+      <td>28.6</td>
+      <td>-3</td>
+      <td>92</td>
+      <td>-63</td>
+      <td>-23</td>
+      <td>18</td>
+      <td>-19</td>
+      <td>5</td>
+      <td>104</td>
+      <td>-92</td>
+      <td>-150</td>
+      <td>-103</td>
+      <td>-147</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>debora</td>
+      <td>0</td>
+      <td>46</td>
+      <td>1.62</td>
+      <td>75</td>
+      <td>28.6</td>
+      <td>-3</td>
+      <td>94</td>
+      <td>-64</td>
+      <td>-21</td>
+      <td>18</td>
+      <td>-18</td>
+      <td>-14</td>
+      <td>104</td>
+      <td>-90</td>
+      <td>-149</td>
+      <td>-104</td>
+      <td>-145</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>debora</td>
+      <td>0</td>
+      <td>46</td>
+      <td>1.62</td>
+      <td>75</td>
+      <td>28.6</td>
+      <td>-1</td>
+      <td>97</td>
+      <td>-61</td>
+      <td>-12</td>
+      <td>20</td>
+      <td>-15</td>
+      <td>-13</td>
+      <td>104</td>
+      <td>-90</td>
+      <td>-151</td>
+      <td>-104</td>
+      <td>-144</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>debora</td>
+      <td>0</td>
+      <td>46</td>
+      <td>1.62</td>
+      <td>75</td>
+      <td>28.6</td>
+      <td>-2</td>
+      <td>96</td>
+      <td>-57</td>
+      <td>-15</td>
+      <td>21</td>
+      <td>-16</td>
+      <td>-13</td>
+      <td>104</td>
+      <td>-89</td>
+      <td>-153</td>
+      <td>-103</td>
+      <td>-142</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>debora</td>
+      <td>0</td>
+      <td>46</td>
+      <td>1.62</td>
+      <td>75</td>
+      <td>28.6</td>
+      <td>-1</td>
+      <td>96</td>
+      <td>-61</td>
+      <td>-13</td>
+      <td>20</td>
+      <td>-15</td>
+      <td>-13</td>
+      <td>104</td>
+      <td>-89</td>
+      <td>-153</td>
+      <td>-104</td>
+      <td>-143</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;class&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>0    50631
+1    47370
+2    43390
+3    12415
+4    11827
+Name: class, dtype: int64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+RangeIndex: 165633 entries, 0 to 165632
+Data columns (total 19 columns):
+user                  165633 non-null object
+gender                165633 non-null int64
+age                   165633 non-null int64
+how_tall_in_meters    165633 non-null object
+weight                165633 non-null int64
+body_mass_index       165633 non-null object
+x1                    165633 non-null int64
+y1                    165633 non-null int64
+z1                    165633 non-null int64
+x2                    165633 non-null int64
+y2                    165633 non-null int64
+z2                    165633 non-null int64
+x3                    165633 non-null int64
+y3                    165633 non-null int64
+z3                    165633 non-null int64
+x4                    165633 non-null int64
+y4                    165633 non-null int64
+z4                    165633 non-null object
+class                 165633 non-null int64
+dtypes: int64(15), object(4)
+memory usage: 24.0+ MB
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Convert how_tall_in_meters, body_mass_index, z4 to numeric</span>
+<span class="n">X</span><span class="p">[</span><span class="s1">&#39;how_tall_in_meters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;how_tall_in_meters&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;raise&#39;</span><span class="p">)</span>
+<span class="n">X</span><span class="p">[</span><span class="s1">&#39;body_mass_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;body_mass_index&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;raise&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+RangeIndex: 165633 entries, 0 to 165632
+Data columns (total 19 columns):
+user                  165633 non-null object
+gender                165633 non-null int64
+age                   165633 non-null int64
+how_tall_in_meters    165633 non-null float64
+weight                165633 non-null int64
+body_mass_index       165633 non-null float64
+x1                    165633 non-null int64
+y1                    165633 non-null int64
+z1                    165633 non-null int64
+x2                    165633 non-null int64
+y2                    165633 non-null int64
+z2                    165633 non-null int64
+x3                    165633 non-null int64
+y3                    165633 non-null int64
+z3                    165633 non-null int64
+x4                    165633 non-null int64
+y4                    165633 non-null int64
+z4                    165633 non-null object
+class                 165633 non-null int64
+dtypes: float64(2), int64(15), object(2)
+memory usage: 24.0+ MB
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;raise&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="o">.</span><span class="n">z4</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>-162    6859
+-158    6770
+-163    6762
+-159    6641
+-161    6402
+Name: z4, dtype: int64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)]</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>gender</th>
+      <th>age</th>
+      <th>how_tall_in_meters</th>
+      <th>weight</th>
+      <th>body_mass_index</th>
+      <th>x1</th>
+      <th>y1</th>
+      <th>z1</th>
+      <th>x2</th>
+      <th>y2</th>
+      <th>z2</th>
+      <th>x3</th>
+      <th>y3</th>
+      <th>z3</th>
+      <th>x4</th>
+      <th>y4</th>
+      <th>z4</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>array([&#39;-147&#39;, &#39;-145&#39;, &#39;-144&#39;, &#39;-142&#39;, &#39;-143&#39;, &#39;-146&#39;, &#39;-138&#39;, &#39;-139&#39;,
+       &#39;-141&#39;, &#39;-133&#39;, &#39;-134&#39;, &#39;-135&#39;, &#39;-140&#39;, &#39;-137&#39;, &#39;-148&#39;, &#39;-151&#39;,
+       &#39;-149&#39;, &#39;-150&#39;, &#39;-152&#39;, &#39;-156&#39;, &#39;-157&#39;, &#39;-155&#39;, &#39;-154&#39;, &#39;-153&#39;,
+       &#39;-158&#39;, &#39;-159&#39;, &#39;-162&#39;, &#39;-163&#39;, &#39;-161&#39;, &#39;-160&#39;, &#39;-164&#39;, &#39;-165&#39;,
+       &#39;-136&#39;, &#39;-126&#39;, &#39;-125&#39;, &#39;-122&#39;, &#39;-132&#39;, &#39;-167&#39;, &#39;-170&#39;, &#39;-169&#39;,
+       &#39;-175&#39;, &#39;-173&#39;, &#39;-166&#39;, &#39;-168&#39;, &#39;-171&#39;, &#39;-172&#39;, &#39;-174&#39;, &#39;-179&#39;,
+       &#39;-177&#39;, &#39;-176&#39;, &#39;-127&#39;, &#39;-131&#39;, &#39;-184&#39;, &#39;-181&#39;, &#39;-178&#39;, &#39;-180&#39;,
+       &#39;-106&#39;, &#39;-114&#39;, &#39;-116&#39;, &#39;-115&#39;, &#39;-89&#39;, &#39;-79&#39;, &#39;-93&#39;, &#39;-78&#39;, &#39;-128&#39;,
+       &#39;-109&#39;, &#39;-113&#39;, &#39;-119&#39;, &#39;-102&#39;, &#39;-111&#39;, &#39;-103&#39;, &#39;-130&#39;, &#39;-129&#39;,
+       &#39;-182&#39;, &#39;-121&#39;, &#39;-186&#39;, &#39;-183&#39;, &#39;-187&#39;, &#39;-190&#39;, &#39;-188&#39;, &#39;-189&#39;,
+       &#39;-185&#39;, &#39;-192&#39;, &#39;-191&#39;, &#39;-193&#39;, &#39;-194&#39;, &#39;-197&#39;, &#39;-196&#39;, &#39;-201&#39;,
+       &#39;-251&#39;, &#39;-195&#39;, &#39;-199&#39;, &#39;-198&#39;, &#39;-123&#39;, &#39;-124&#39;, &#39;-112&#39;, &#39;-118&#39;,
+       &#39;-120&#39;, &#39;-99&#39;, &#39;-95&#39;, &#39;-68&#39;, &#39;-110&#39;, &#39;-117&#39;, &#39;-96&#39;, &#39;-100&#39;, &#39;-105&#39;,
+       &#39;-92&#39;, &#39;-88&#39;, &#39;-107&#39;, &#39;-213&#39;, &#39;-108&#39;, &#39;-104&#39;, &#39;-98&#39;, &#39;-94&#39;, &#39;-91&#39;,
+       &#39;-97&#39;, &#39;-69&#39;, &#39;-101&#39;, &#39;-86&#39;, &#39;-82&#39;, &#39;-66&#39;, &#39;-77&#39;, &#39;-90&#39;, &#39;-56&#39;,
+       &#39;-74&#39;, &#39;-83&#39;, &#39;-81&#39;, &#39;-219&#39;, &#39;-200&#39;, &#39;-221&#39;, &#39;-80&#39;, &#39;-231&#39;, &#39;-210&#39;,
+       &#39;-71&#39;, &#39;-207&#39;, &#39;-209&#39;, &#39;-202&#39;, &#39;-205&#39;, &#39;-208&#39;, &#39;-211&#39;, &#39;-214&#39;,
+       &#39;-203&#39;, &#39;-204&#39;, &#39;-212&#39;, &#39;-206&#39;, &#39;-216&#39;, &#39;-73&#39;,
+       &#39;-14420-11-2011 04:50:23.713&#39;, &#39;-43&#39;, &#39;-537&#39;, &#39;-218&#39;, &#39;-215&#39;, &#39;-259&#39;], dtype=object)
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;coerce&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="o">.</span><span class="n">z4</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>-162.0    6859
+-158.0    6770
+-163.0    6762
+-159.0    6641
+-161.0    6402
+Name: z4, dtype: int64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>array([-147., -145., -144., -142., -143., -146., -138., -139., -141.,
+       -133., -134., -135., -140., -137., -148., -151., -149., -150.,
+       -152., -156., -157., -155., -154., -153., -158., -159., -162.,
+       -163., -161., -160., -164., -165., -136., -126., -125., -122.,
+       -132., -167., -170., -169., -175., -173., -166., -168., -171.,
+       -172., -174., -179., -177., -176., -127., -131., -184., -181.,
+       -178., -180., -106., -114., -116., -115.,  -89.,  -79.,  -93.,
+        -78., -128., -109., -113., -119., -102., -111., -103., -130.,
+       -129., -182., -121., -186., -183., -187., -190., -188., -189.,
+       -185., -192., -191., -193., -194., -197., -196., -201., -251.,
+       -195., -199., -198., -123., -124., -112., -118., -120.,  -99.,
+        -95.,  -68., -110., -117.,  -96., -100., -105.,  -92.,  -88.,
+       -107., -213., -108., -104.,  -98.,  -94.,  -91.,  -97.,  -69.,
+       -101.,  -86.,  -82.,  -66.,  -77.,  -90.,  -56.,  -74.,  -83.,
+        -81., -219., -200., -221.,  -80., -231., -210.,  -71., -207.,
+       -209., -202., -205., -208., -211., -214., -203., -204., -212.,
+       -206., -216.,  -73.,   nan,  -43., -537., -218., -215., -259.])
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+RangeIndex: 165633 entries, 0 to 165632
+Data columns (total 19 columns):
+user                  165633 non-null object
+gender                165633 non-null int64
+age                   165633 non-null int64
+how_tall_in_meters    165633 non-null float64
+weight                165633 non-null int64
+body_mass_index       165633 non-null float64
+x1                    165633 non-null int64
+y1                    165633 non-null int64
+z1                    165633 non-null int64
+x2                    165633 non-null int64
+y2                    165633 non-null int64
+z2                    165633 non-null int64
+x3                    165633 non-null int64
+y3                    165633 non-null int64
+z3                    165633 non-null int64
+x4                    165633 non-null int64
+y4                    165633 non-null int64
+z4                    165632 non-null float64
+class                 165633 non-null int64
+dtypes: float64(3), int64(15), object(1)
+memory usage: 24.0+ MB
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Drop rows with NaNs</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+<span class="c1"># Make sure there are no rows with NaNs</span>
+<span class="k">print</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)])</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>Empty DataFrame
+Columns: [user, gender, age, how_tall_in_meters, weight, body_mass_index, x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, class]
+Index: []
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>array([-147., -145., -144., -142., -143., -146., -138., -139., -141.,
+       -133., -134., -135., -140., -137., -148., -151., -149., -150.,
+       -152., -156., -157., -155., -154., -153., -158., -159., -162.,
+       -163., -161., -160., -164., -165., -136., -126., -125., -122.,
+       -132., -167., -170., -169., -175., -173., -166., -168., -171.,
+       -172., -174., -179., -177., -176., -127., -131., -184., -181.,
+       -178., -180., -106., -114., -116., -115.,  -89.,  -79.,  -93.,
+        -78., -128., -109., -113., -119., -102., -111., -103., -130.,
+       -129., -182., -121., -186., -183., -187., -190., -188., -189.,
+       -185., -192., -191., -193., -194., -197., -196., -201., -251.,
+       -195., -199., -198., -123., -124., -112., -118., -120.,  -99.,
+        -95.,  -68., -110., -117.,  -96., -100., -105.,  -92.,  -88.,
+       -107., -213., -108., -104.,  -98.,  -94.,  -91.,  -97.,  -69.,
+       -101.,  -86.,  -82.,  -66.,  -77.,  -90.,  -56.,  -74.,  -83.,
+        -81., -219., -200., -221.,  -80., -231., -210.,  -71., -207.,
+       -209., -202., -205., -208., -211., -214., -203., -204., -212.,
+       -206., -216.,  -73.,  -43., -537., -218., -215., -259.])
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Convert Z4 to int</span>
+<span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="s1">&#39;z4&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Store the predictor variable in y</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">X</span><span class="p">[[</span><span class="s1">&#39;class&#39;</span><span class="p">]]</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Drop the predictor class from X</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;class&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">X</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+Int64Index: 165632 entries, 0 to 165632
+Data columns (total 18 columns):
+user                  165632 non-null object
+gender                165632 non-null int64
+age                   165632 non-null int64
+how_tall_in_meters    165632 non-null float64
+weight                165632 non-null int64
+body_mass_index       165632 non-null float64
+x1                    165632 non-null int64
+y1                    165632 non-null int64
+z1                    165632 non-null int64
+x2                    165632 non-null int64
+y2                    165632 non-null int64
+z2                    165632 non-null int64
+x3                    165632 non-null int64
+y3                    165632 non-null int64
+z3                    165632 non-null int64
+x4                    165632 non-null int64
+y4                    165632 non-null int64
+z4                    165632 non-null int64
+dtypes: float64(2), int64(15), object(1)
+memory usage: 24.0+ MB
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">X</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+Int64Index: 165632 entries, 0 to 165632
+Data columns (total 17 columns):
+gender                165632 non-null int64
+age                   165632 non-null int64
+how_tall_in_meters    165632 non-null float64
+weight                165632 non-null int64
+body_mass_index       165632 non-null float64
+x1                    165632 non-null int64
+y1                    165632 non-null int64
+z1                    165632 non-null int64
+x2                    165632 non-null int64
+y2                    165632 non-null int64
+z2                    165632 non-null int64
+x3                    165632 non-null int64
+y3                    165632 non-null int64
+z3                    165632 non-null int64
+x4                    165632 non-null int64
+y4                    165632 non-null int64
+z4                    165632 non-null int64
+dtypes: float64(2), int64(15)
+memory usage: 22.7 MB
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="k">print</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)])</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>Empty DataFrame
+Columns: [gender, age, how_tall_in_meters, weight, body_mass_index, x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4]
+Index: []
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Split your data into test / train sets</span>
+<span class="c1"># Your test size can be 30% with random_state 7</span>
+<span class="c1"># Use variable names: X_train, X_test, y_train, y_test</span>
+<span class="c1">#</span>
+<span class="kn">from</span> <span class="nn">sklearn.cross_validation</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+
+<span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.30</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1">#</span>
+<span class="c1"># Create an RForest classifier &#39;model&#39; and set n_estimators=30,</span>
+<span class="c1"># the max_depth to 10, and oob_score=True, and random_state=0</span>
+<span class="c1">#</span>
+<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestClassifier</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">RandomForestClassifier</span><span class="p">(</span><span class="n">n_estimators</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">oob_score</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="k">print</span> <span class="p">(</span><span class="s2">&quot;Fitting...&quot;</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="c1">#</span>
+<span class="c1"># train your model on your training set</span>
+<span class="c1">#</span>
+<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="p">(</span><span class="s2">&quot;Fitting completed in: &quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">s</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>Fitting...
+Fitting completed in:  4.249861001968384
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1">#</span>
+<span class="c1"># INFO: Display the OOB Score of your data</span>
+<span class="n">oob_score</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">oob_score_</span>
+<span class="k">print</span> <span class="p">(</span><span class="s2">&quot;OOB Score: &quot;</span><span class="p">,</span> <span class="nb">round</span><span class="p">((</span><span class="n">oob_score</span><span class="o">*</span><span class="mi">100</span><span class="p">),</span> <span class="mi">3</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>OOB Score:  97.012
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="k">print</span> <span class="p">(</span><span class="s2">&quot;Scoring...&quot;</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="c1">#</span>
+<span class="c1"># score your model on your test set</span>
+<span class="c1">#</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="p">(</span><span class="s2">&quot;Score: &quot;</span><span class="p">,</span> <span class="nb">round</span><span class="p">((</span><span class="n">score</span><span class="o">*</span><span class="mi">100</span><span class="p">),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="k">print</span> <span class="p">(</span><span class="s2">&quot;Scoring completed in: &quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">s</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>Scoring...
+Score:  97.094
+Scoring completed in:  0.21677207946777344
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Predict based on the train model</span>
+
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">classification_report</span><span class="p">,</span><span class="n">confusion_matrix</span>
+<span class="k">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="n">predictions</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>             precision    recall  f1-score   support
+
+          0       1.00      1.00      1.00     15209
+          1       0.93      0.99      0.96     14077
+          2       0.99      0.97      0.98     13189
+          3       0.97      0.83      0.90      3725
+          4       0.95      0.90      0.93      3490
+
+avg / total       0.97      0.97      0.97     49690
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="n">predictions</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="k">[[15188     0     0    19     2]</span>
+ <span class="k">[    0 13992    82     3     0]</span>
+ <span class="k">[    0   348 12825     6    10]</span>
+ <span class="k">[   22   421    39  3101   142]</span>
+ <span class="k">[   26   235    31    58  3140]]</span>
+</pre></div>
+
+
+<h4>Accuracy</h4>
+<ul>
+<li>The percentage of cases correctly classified</li>
+<li>(TP+TN)/(P+N)</li>
+</ul>
+<h4>Recall or True Positive Rate or Sensitivity</h4>
+<ul>
+<li>The proportion of positive instances that are correctly classified as positive</li>
+<li>TP/P</li>
+</ul>
+<h4>Precision or Positive Predictive Value</h4>
+<ul>
+<li>Proportion of instances classified as positive that are really positive</li>
+<li>TP/(TP+FP)</li>
+</ul>
+<h4>True negative rate or Specificity</h4>
+<ul>
+<li>The proportion of negative instances that are correctly classified as negative</li>
+<li>TN/N</li>
+</ul>
+<h4>F-1 Score</h4>
+<ul>
+<li>A measure that combines Precision and Recall</li>
+<li>(2<em>Precision</em>Recall)/(Precision+recall)</li>
+</ul>
+<div class="highlight"><pre><span></span>
+</pre></div></div>
+    <footer>
+<p class="meta">
+  <span class="byline author vcard">
+    Posted by <span class="fn">Pandu Ranganath</span>
+  </span>
+<time datetime="2016-10-08T14:00:00-07:00" pubdate>Sat 08 October 2016</time></p>    </footer>
+  </article>
+
+</div>
+<aside class="sidebar">
+    <section id="social-sidebar-top">
+    </section>
+    <section>
+    <h1>Artículos recientes</h1>
+    <ul id="recent_posts">
+        <li class="post">
+        <a href="./healthcare-accelerometer-data-case-study.html">Healthcare (Accelerometer data) case study</a>
+        </li>
+        <li class="post">
+        <a href="./beginners-guide-to-learning-data-science.html">Beginner's guide to learning Data Science</a>
+        </li>
+        <li class="post">
+        <a href="./second-post.html">Second Post</a>
+        </li>
+        <li class="post">
+        <a href="./first-post.html">First Post</a>
+        </li>
+    </ul>
+    </section>
+        <section>
+        <h1>Categorías</h1>
+        <ul id="recent_posts">
+            <li><a href="./category/data-science.html">Data Science</a></li>
+        </ul>
+        </section>
+ 
+    <section>
+    <h1>Tags</h1>
+    <a href="./tag/python.html">python</a>    </section>
+
+
+    <section>
+        <h1>Social</h2>
+        <ul>
+            <li><a href="https://www.linkedin.com/in/pandu" target="_blank">LinkedIN</a></li>
+            <li><a href="pandu.ranganath@gmail.com" target="_blank">email</a></li>
+        <li><a href="techflux.github.io/" type="application/rss+xml" rel="alternate">RSS</a></li>
+        </ul>
+    </section>
+    <section>
+        <h1>Blogroll</h2>
+        <ul>
+            <li><a href="@pandu.ranganath@gmail.com" target="_blank">Contact</a></li>
+            <li><a href="#" target="_blank">You can modify those links in your config file</a></li>
+        </ul>
+    </section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Pandu Ranganath -
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span> - 
+  El contenido de este blog está bajo <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.es_CO">Licencia Creative Commons Atribución-CompartirIgual 3.0 Unported</a>.
+</p></footer>
+</body>
+</html>
