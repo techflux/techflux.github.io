@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Parkinson’s disease predictor</title>
+  <meta name="author" content="Pandu Ranganath">
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="./favicon.png" rel="icon">
+  <link href="./theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+  <script src="./theme/js/modernizr-2.0.js"></script>
+  <script src="./theme/js/ender.js"></script>
+  <script src="./theme/js/octopress.js" type="text/javascript"></script>
+
+  <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+  rel="stylesheet" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <link href='http://fonts.googleapis.com/css?family=Roboto:300,100' rel='stylesheet' type='text/css'>
+</head>
+
+<body>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+</ul>
+
+<!-- TODO: add search here
+<form action="" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:." />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+-->
+
+<ul class="main-navigation">
+    <!-- TODO: add categories here? -->
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div>
+  <article class="hentry" role="article">
+<header>
+      <h1 class="entry-title">Parkinson’s disease predictor</h1>
+      <p class="meta"><time datetime="2016-10-08T18:00:00-07:00" pubdate>Sat 08 October 2016</time></p>
+</header>
+
+  <div class="entry-content"><p>Parkinson's disease itself is a long-term disorder of the nervous system that affects many aspects of a person's mobility over time. It's characterized by shaking, slowed movement, rigidity, dementia, and depression. In 2013, some 53 million people were diagnosed with it, mostly men. Other famous personalities affected by it include actor Michael J Fox, and olympic cyclist Davis Phinney.</p>
+<p>In this we will be applying PCA and SVC to the <a href="https://archive.ics.uci.edu/ml/datasets/Parkinsons">Parkinson's Data Set</a>, provided courtesy of UCI's Machine Learning Repository. The dataset was created at the University of Oxford, in collaboration with 10 medical centers around the US, along with Intel who developed the device used to record the primary features of the dataset: speech signals. Your goals for this assignment are first to see if it's possible to differentiate between people who have Parkinson's and who don't using SciKit-Learn's support vector classifier, and then to take a first-stab at a naive way of fine-tuning your parameters in an attempt to maximize the accuracy of your testing set.</p>
+<h4>Steps to follow</h4>
+<ol>
+<li>
+<p>Load up the /Module6/Datasets/parkinsons.data data set into a variable X, being sure to drop the name column.</p>
+</li>
+<li>
+<p>Splice out the status column into a variable y and delete it from X.</p>
+</li>
+<li>
+<p>Perform a train/test split. 30% test group size, with a random_state equal to 7.</p>
+</li>
+<li>
+<p>Apply PCA to reduce the number of dimensions and then create a SVC classifier. </p>
+</li>
+<li>
+<p>Fit it against your training data and then score your testing data.</p>
+</li>
+</ol>
+<h2>Matrix column entries (attributes):</h2>
+<ul>
+<li>name - ASCII subject name and recording number </li>
+<li>MDVP:Fo(Hz) - Average vocal fundamental frequency </li>
+<li>MDVP:Fhi(Hz) - Maximum vocal fundamental frequency </li>
+<li>MDVP:Flo(Hz) - Minimum vocal fundamental frequency </li>
+<li>MDVP:Jitter(%),MDVP:Jitter(Abs),MDVP:RAP,MDVP:PPQ,Jitter:DDP - Several measures of variation in fundamental frequency </li>
+<li>MDVP:Shimmer,MDVP:Shimmer(dB),Shimmer:APQ3,Shimmer:APQ5,MDVP:APQ,Shimmer:DDA - Several measures of variation in * amplitude </li>
+<li>NHR,HNR - Two measures of ratio of noise to tonal components in the voice </li>
+<li>status - Health status of the subject (one) - Parkinson's, (zero) - healthy </li>
+<li>RPDE,D2 - Two nonlinear dynamical complexity measures </li>
+<li>DFA - Signal fractal scaling exponent </li>
+<li>spread1,spread2,PPE - Three nonlinear measures of fundamental frequency variation </li>
+</ul>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="kn">as</span> <span class="nn">sns</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;/Users/Pandu/Downloads/DAT210x/code/Module6/Datasets/parkinsons.data&#39;</span><span class="p">)</span>
+<span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>name</th>
+      <th>MDVP:Fo(Hz)</th>
+      <th>MDVP:Fhi(Hz)</th>
+      <th>MDVP:Flo(Hz)</th>
+      <th>MDVP:Jitter(%)</th>
+      <th>MDVP:Jitter(Abs)</th>
+      <th>MDVP:RAP</th>
+      <th>MDVP:PPQ</th>
+      <th>Jitter:DDP</th>
+      <th>MDVP:Shimmer</th>
+      <th>...</th>
+      <th>Shimmer:DDA</th>
+      <th>NHR</th>
+      <th>HNR</th>
+      <th>status</th>
+      <th>RPDE</th>
+      <th>DFA</th>
+      <th>spread1</th>
+      <th>spread2</th>
+      <th>D2</th>
+      <th>PPE</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>phon_R01_S01_1</td>
+      <td>119.992</td>
+      <td>157.302</td>
+      <td>74.997</td>
+      <td>0.00784</td>
+      <td>0.00007</td>
+      <td>0.00370</td>
+      <td>0.00554</td>
+      <td>0.01109</td>
+      <td>0.04374</td>
+      <td>...</td>
+      <td>0.06545</td>
+      <td>0.02211</td>
+      <td>21.033</td>
+      <td>1</td>
+      <td>0.414783</td>
+      <td>0.815285</td>
+      <td>-4.813031</td>
+      <td>0.266482</td>
+      <td>2.301442</td>
+      <td>0.284654</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>phon_R01_S01_2</td>
+      <td>122.400</td>
+      <td>148.650</td>
+      <td>113.819</td>
+      <td>0.00968</td>
+      <td>0.00008</td>
+      <td>0.00465</td>
+      <td>0.00696</td>
+      <td>0.01394</td>
+      <td>0.06134</td>
+      <td>...</td>
+      <td>0.09403</td>
+      <td>0.01929</td>
+      <td>19.085</td>
+      <td>1</td>
+      <td>0.458359</td>
+      <td>0.819521</td>
+      <td>-4.075192</td>
+      <td>0.335590</td>
+      <td>2.486855</td>
+      <td>0.368674</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>phon_R01_S01_3</td>
+      <td>116.682</td>
+      <td>131.111</td>
+      <td>111.555</td>
+      <td>0.01050</td>
+      <td>0.00009</td>
+      <td>0.00544</td>
+      <td>0.00781</td>
+      <td>0.01633</td>
+      <td>0.05233</td>
+      <td>...</td>
+      <td>0.08270</td>
+      <td>0.01309</td>
+      <td>20.651</td>
+      <td>1</td>
+      <td>0.429895</td>
+      <td>0.825288</td>
+      <td>-4.443179</td>
+      <td>0.311173</td>
+      <td>2.342259</td>
+      <td>0.332634</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>phon_R01_S01_4</td>
+      <td>116.676</td>
+      <td>137.871</td>
+      <td>111.366</td>
+      <td>0.00997</td>
+      <td>0.00009</td>
+      <td>0.00502</td>
+      <td>0.00698</td>
+      <td>0.01505</td>
+      <td>0.05492</td>
+      <td>...</td>
+      <td>0.08771</td>
+      <td>0.01353</td>
+      <td>20.644</td>
+      <td>1</td>
+      <td>0.434969</td>
+      <td>0.819235</td>
+      <td>-4.117501</td>
+      <td>0.334147</td>
+      <td>2.405554</td>
+      <td>0.368975</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>phon_R01_S01_5</td>
+      <td>116.014</td>
+      <td>141.781</td>
+      <td>110.655</td>
+      <td>0.01284</td>
+      <td>0.00011</td>
+      <td>0.00655</td>
+      <td>0.00908</td>
+      <td>0.01966</td>
+      <td>0.06425</td>
+      <td>...</td>
+      <td>0.10470</td>
+      <td>0.01767</td>
+      <td>19.649</td>
+      <td>1</td>
+      <td>0.417356</td>
+      <td>0.823484</td>
+      <td>-3.747787</td>
+      <td>0.234513</td>
+      <td>2.332180</td>
+      <td>0.410335</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 24 columns</p>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># Drop the name column</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Store the predictor class in y</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">X</span><span class="p">[[</span><span class="s1">&#39;status&#39;</span><span class="p">]]</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Drop status column (predictor class) from test data</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">StandardScaler</span>
+
+<span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+<span class="n">scaler</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>StandardScaler(copy=True, with_mean=True, with_std=True)
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">scaled_data</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># run PCA repeatedly for n_components 4 to 14</span>
+<span class="c1">## Perform grid SVC</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.grid_search</span> <span class="kn">import</span> <span class="n">GridSearchCV</span>
+
+<span class="n">C_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+<span class="n">gamma_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span>
+<span class="c1"># param_grid = dict(gamma=gamma_range.tolist(), C=C_range.tolist())</span>
+
+
+<span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">scaled_data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.30</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">nc</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">15</span><span class="p">):</span>
+    <span class="c1">## Perform PCA</span>
+    <span class="n">pca</span> <span class="o">=</span> <span class="n">PCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">nc</span><span class="p">)</span>
+    <span class="n">pca</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+
+    <span class="n">X_t_train</span> <span class="o">=</span> <span class="n">pca</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+    <span class="n">X_t_test</span> <span class="o">=</span> <span class="n">pca</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+
+    <span class="c1">## Perform SVC</span>
+    <span class="n">param_grid</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="n">gamma_range</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="n">C_range</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s1">&#39;kernel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;rbf&#39;</span><span class="p">]}</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">SVC</span><span class="p">(),</span><span class="n">param_grid</span><span class="p">,</span><span class="n">refit</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">grid</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span><span class="n">y_train</span><span class="p">)</span>
+    <span class="n">grid</span><span class="o">.</span><span class="n">best_params_</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;grid.best_params_:  &#39;</span><span class="p">,</span> <span class="s1">&#39;score:  &#39;</span><span class="p">,</span> <span class="n">grid</span><span class="o">.</span><span class="n">best_params_</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="s1">&#39;grid.best_params_:  &#39;</span><span class="p">,</span> <span class="s1">&#39;score:  &#39;</span><span class="p">,</span> <span class="n">grid</span><span class="o">.</span><span class="n">best_params_</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>grid.best_params_:   score:   {&#39;C&#39;: 0.7000000000000001, &#39;gamma&#39;: 0.056, &#39;kernel&#39;: &#39;rbf&#39;} 0.898305084746
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">grid_predictions</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">classification_report</span><span class="p">,</span><span class="n">confusion_matrix</span>
+<span class="k">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="n">grid_predictions</span><span class="p">))</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>             precision    recall  f1-score   support
+
+          0       1.00      0.50      0.67        12
+          1       0.89      1.00      0.94        47
+
+avg / total       0.91      0.90      0.88        59
+</pre></div></div>
+    <footer>
+<p class="meta">
+  <span class="byline author vcard">
+    Posted by <span class="fn">Pandu Ranganath</span>
+  </span>
+<time datetime="2016-10-08T18:00:00-07:00" pubdate>Sat 08 October 2016</time></p>    </footer>
+  </article>
+
+</div>
+<aside class="sidebar">
+    <section id="social-sidebar-top">
+    </section>
+    <section>
+    <h1>Artículos recientes</h1>
+    <ul id="recent_posts">
+        <li class="post">
+        <a href="./parkinsons-disease-predictor.html">Parkinson’s disease predictor</a>
+        </li>
+        <li class="post">
+        <a href="./character-recognition-similar-to-what-usps-uses.html">Character Recognition (similar to what USPS uses)</a>
+        </li>
+        <li class="post">
+        <a href="./cohort-analysis.html">Cohort Analysis</a>
+        </li>
+        <li class="post">
+        <a href="./healthcare-accelerometer-data-case-study.html">Healthcare (Accelerometer data) case study</a>
+        </li>
+        <li class="post">
+        <a href="./beginners-guide-to-learning-data-science.html">Beginner's guide to learning Data Science</a>
+        </li>
+    </ul>
+    </section>
+        <section>
+        <h1>Categorías</h1>
+        <ul id="recent_posts">
+            <li><a href="./category/data-science.html">Data Science</a></li>
+        </ul>
+        </section>
+ 
+    <section>
+    <h1>Tags</h1>
+    </section>
+
+
+    <section>
+        <h1>Social</h2>
+        <ul>
+            <li><a href="https://www.linkedin.com/in/pandu" target="_blank">LinkedIN</a></li>
+            <li><a href="pandu.ranganath@gmail.com" target="_blank">email</a></li>
+        <li><a href="techflux.github.io/" type="application/rss+xml" rel="alternate">RSS</a></li>
+        </ul>
+    </section>
+    <section>
+        <h1>Blogroll</h2>
+        <ul>
+            <li><a href="@pandu.ranganath@gmail.com" target="_blank">Contact</a></li>
+            <li><a href="#" target="_blank">You can modify those links in your config file</a></li>
+        </ul>
+    </section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Pandu Ranganath -
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span> - 
+  El contenido de este blog está bajo <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.es_CO">Licencia Creative Commons Atribución-CompartirIgual 3.0 Unported</a>.
+</p></footer>
+</body>
+</html>
