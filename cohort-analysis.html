@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Cohort Analysis</title>
+  <meta name="author" content="Pandu Ranganath">
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="./favicon.png" rel="icon">
+  <link href="./theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+  <script src="./theme/js/modernizr-2.0.js"></script>
+  <script src="./theme/js/ender.js"></script>
+  <script src="./theme/js/octopress.js" type="text/javascript"></script>
+
+  <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+  rel="stylesheet" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <link href='http://fonts.googleapis.com/css?family=Roboto:300,100' rel='stylesheet' type='text/css'>
+</head>
+
+<body>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+</ul>
+
+<!-- TODO: add search here
+<form action="" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:." />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+-->
+
+<ul class="main-navigation">
+    <!-- TODO: add categories here? -->
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div>
+  <article class="hentry" role="article">
+<header>
+      <h1 class="entry-title">Cohort Analysis</h1>
+      <p class="meta"><time datetime="2016-10-08T16:00:00-07:00" pubdate>Sat 08 October 2016</time></p>
+</header>
+
+  <div class="entry-content"><h1>Cohort Analysis</h1>
+<p>Cohort is a group of people who do something common. The grouping can occur by time period and based on the actions the users take. For example, one cohort can include all the people who signed up for your service in January of 2016 or all the customers who purchased at least one product in February, 2016. </p>
+<p>In marketing, you can analyze the actions performed by cohorts by time periods, so you can learn more about the cohorts. For instance, you can see who is coming back later and what actions they are taking etc.</p>
+<h2>References</h2>
+<ol>
+<li>
+<p>The code below is inspired by the <a href="http://www.gregreda.com/2015/08/23/cohort-analysis-with-python/">blog</a> written by Greg Reda</p>
+</li>
+<li>
+<p>The data set below comes from a popular marketing analytics book called Cutting Edge Marketing Analytics. You can download the data set <a href="http://dmanalytics.org/wp-content/uploads/2014/10/chapter-12-relay-foods.xlsx">here</a></p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="kn">as</span> <span class="nn">mt</span>
+
+<span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s1">&#39;max_columns&#39;</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;lines.linewidth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># Load the data set from the excel spread sheet</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s1">&#39;/Users/Pandu/Personal/School/Data Science/Case Studies/Case Studies/Cohort Analysis/relay-foods.xlsx&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1">## See the top 5 rows</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>OrderId</th>
+      <th>OrderDate</th>
+      <th>UserId</th>
+      <th>TotalCharges</th>
+      <th>CommonId</th>
+      <th>PupId</th>
+      <th>PickupDate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>262</td>
+      <td>2009-01-11</td>
+      <td>47</td>
+      <td>50.67</td>
+      <td>TRQKD</td>
+      <td>2</td>
+      <td>2009-01-12</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>278</td>
+      <td>2009-01-20</td>
+      <td>47</td>
+      <td>26.60</td>
+      <td>4HH2S</td>
+      <td>3</td>
+      <td>2009-01-20</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>294</td>
+      <td>2009-02-03</td>
+      <td>47</td>
+      <td>38.71</td>
+      <td>3TRDC</td>
+      <td>2</td>
+      <td>2009-02-04</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>301</td>
+      <td>2009-02-06</td>
+      <td>47</td>
+      <td>53.38</td>
+      <td>NGAZJ</td>
+      <td>2</td>
+      <td>2009-02-09</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>302</td>
+      <td>2009-02-06</td>
+      <td>47</td>
+      <td>14.28</td>
+      <td>FFYHD</td>
+      <td>2</td>
+      <td>2009-02-09</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># Understand the data and the range of values</span>
+<span class="n">df</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>OrderId</th>
+      <th>UserId</th>
+      <th>TotalCharges</th>
+      <th>PupId</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>2891.000000</td>
+      <td>2891.000000</td>
+      <td>2891.000000</td>
+      <td>2891.000000</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>1763.644414</td>
+      <td>85586.842269</td>
+      <td>59.947184</td>
+      <td>6.848495</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>855.881824</td>
+      <td>96952.929059</td>
+      <td>55.009949</td>
+      <td>4.613567</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>256.000000</td>
+      <td>47.000000</td>
+      <td>1.390000</td>
+      <td>2.000000</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>1021.500000</td>
+      <td>5534.000000</td>
+      <td>22.965000</td>
+      <td>4.000000</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>1778.000000</td>
+      <td>42270.000000</td>
+      <td>44.810000</td>
+      <td>5.000000</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>2504.500000</td>
+      <td>132044.000000</td>
+      <td>79.600000</td>
+      <td>7.000000</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>3234.000000</td>
+      <td>396551.000000</td>
+      <td>690.982700</td>
+      <td>20.000000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+RangeIndex: 2891 entries, 0 to 2890
+Data columns (total 7 columns):
+OrderId         2891 non-null int64
+OrderDate       2891 non-null datetime64[ns]
+UserId          2891 non-null int64
+TotalCharges    2891 non-null float64
+CommonId        2891 non-null object
+PupId           2891 non-null int64
+PickupDate      2891 non-null datetime64[ns]
+dtypes: datetime64[ns](2), float64(1), int64(3), object(1)
+memory usage: 158.2+ KB
+</pre></div>
+
+
+<h2>1. Create a period column based on the OrderDate</h2>
+<p>Since we're doing monthly cohorts, we'll be looking at the total monthly behavior of our users. Therefore, we don't want granular OrderDate data (right now).</p>
+<div class="highlight"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;OrderPeriod&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">OrderDate</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m&#39;</span><span class="p">))</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>OrderId</th>
+      <th>OrderDate</th>
+      <th>UserId</th>
+      <th>TotalCharges</th>
+      <th>CommonId</th>
+      <th>PupId</th>
+      <th>PickupDate</th>
+      <th>OrderPeriod</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>262</td>
+      <td>2009-01-11</td>
+      <td>47</td>
+      <td>50.67</td>
+      <td>TRQKD</td>
+      <td>2</td>
+      <td>2009-01-12</td>
+      <td>2009-01</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>278</td>
+      <td>2009-01-20</td>
+      <td>47</td>
+      <td>26.60</td>
+      <td>4HH2S</td>
+      <td>3</td>
+      <td>2009-01-20</td>
+      <td>2009-01</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>294</td>
+      <td>2009-02-03</td>
+      <td>47</td>
+      <td>38.71</td>
+      <td>3TRDC</td>
+      <td>2</td>
+      <td>2009-02-04</td>
+      <td>2009-02</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>301</td>
+      <td>2009-02-06</td>
+      <td>47</td>
+      <td>53.38</td>
+      <td>NGAZJ</td>
+      <td>2</td>
+      <td>2009-02-09</td>
+      <td>2009-02</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>302</td>
+      <td>2009-02-06</td>
+      <td>47</td>
+      <td>14.28</td>
+      <td>FFYHD</td>
+      <td>2</td>
+      <td>2009-02-09</td>
+      <td>2009-02</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2>2. Determine the user's cohort group (based on their first order)</h2>
+<p>Create a new column called CohortGroup, which is the year and month in which the user's first purchase occurred.</p>
+<p>The new column now only contains the segmentation by month and year.</p>
+<div class="highlight"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;UserId&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s1">&#39;CohortGroup&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;OrderDate&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m&#39;</span><span class="p">))</span>
+<span class="n">df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>UserId</th>
+      <th>OrderId</th>
+      <th>OrderDate</th>
+      <th>TotalCharges</th>
+      <th>CommonId</th>
+      <th>PupId</th>
+      <th>PickupDate</th>
+      <th>OrderPeriod</th>
+      <th>CohortGroup</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>47</td>
+      <td>262</td>
+      <td>2009-01-11</td>
+      <td>50.67</td>
+      <td>TRQKD</td>
+      <td>2</td>
+      <td>2009-01-12</td>
+      <td>2009-01</td>
+      <td>2009-01</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>47</td>
+      <td>278</td>
+      <td>2009-01-20</td>
+      <td>26.60</td>
+      <td>4HH2S</td>
+      <td>3</td>
+      <td>2009-01-20</td>
+      <td>2009-01</td>
+      <td>2009-01</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>47</td>
+      <td>294</td>
+      <td>2009-02-03</td>
+      <td>38.71</td>
+      <td>3TRDC</td>
+      <td>2</td>
+      <td>2009-02-04</td>
+      <td>2009-02</td>
+      <td>2009-01</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>47</td>
+      <td>301</td>
+      <td>2009-02-06</td>
+      <td>53.38</td>
+      <td>NGAZJ</td>
+      <td>2</td>
+      <td>2009-02-09</td>
+      <td>2009-02</td>
+      <td>2009-01</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>47</td>
+      <td>302</td>
+      <td>2009-02-06</td>
+      <td>14.28</td>
+      <td>FFYHD</td>
+      <td>2</td>
+      <td>2009-02-09</td>
+      <td>2009-02</td>
+      <td>2009-01</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2>3. Rollup data by CohortGroup &amp; OrderPeriod</h2>
+<p>Since we're looking at monthly cohorts, we need to aggregate users, orders, and amount spent by the CohortGroup within the month (OrderPeriod).</p>
+<p>What we want to find out next is the aggregated count of users, charges and orders by cohort periods</p>
+<div class="highlight"><pre><span></span><span class="n">grouped</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;CohortGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;OrderPeriod&#39;</span><span class="p">])</span>
+
+<span class="c1"># count the unique users, orders, and total revenue per Group + Period</span>
+<span class="n">cohorts</span> <span class="o">=</span> <span class="n">grouped</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s1">&#39;UserId&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="o">.</span><span class="n">nunique</span><span class="p">,</span>
+                       <span class="s1">&#39;OrderId&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="o">.</span><span class="n">nunique</span><span class="p">,</span>
+                       <span class="s1">&#39;TotalCharges&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">})</span>
+
+<span class="c1"># make the column names more meaningful</span>
+<span class="n">cohorts</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;UserId&#39;</span><span class="p">:</span> <span class="s1">&#39;TotalUsers&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;OrderId&#39;</span><span class="p">:</span> <span class="s1">&#39;TotalOrders&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">cohorts</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th>TotalUsers</th>
+      <th>TotalCharges</th>
+      <th>TotalOrders</th>
+    </tr>
+    <tr>
+      <th>CohortGroup</th>
+      <th>OrderPeriod</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="5" valign="top">2009-01</th>
+      <th>2009-01</th>
+      <td>22</td>
+      <td>1850.255</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <th>2009-02</th>
+      <td>8</td>
+      <td>1351.065</td>
+      <td>25</td>
+    </tr>
+    <tr>
+      <th>2009-03</th>
+      <td>10</td>
+      <td>1357.360</td>
+      <td>26</td>
+    </tr>
+    <tr>
+      <th>2009-04</th>
+      <td>9</td>
+      <td>1604.500</td>
+      <td>28</td>
+    </tr>
+    <tr>
+      <th>2009-05</th>
+      <td>10</td>
+      <td>1575.625</td>
+      <td>26</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="n">cohorts</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th>TotalUsers</th>
+      <th>TotalCharges</th>
+      <th>TotalOrders</th>
+    </tr>
+    <tr>
+      <th>CohortGroup</th>
+      <th>OrderPeriod</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="5" valign="top">2009-01</th>
+      <th>2009-01</th>
+      <td>22</td>
+      <td>1850.255</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <th>2009-02</th>
+      <td>8</td>
+      <td>1351.065</td>
+      <td>25</td>
+    </tr>
+    <tr>
+      <th>2009-03</th>
+      <td>10</td>
+      <td>1357.360</td>
+      <td>26</td>
+    </tr>
+    <tr>
+      <th>2009-04</th>
+      <td>9</td>
+      <td>1604.500</td>
+      <td>28</td>
+    </tr>
+    <tr>
+      <th>2009-05</th>
+      <td>10</td>
+      <td>1575.625</td>
+      <td>26</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2>4. Label the CohortPeriod for each CohortGroup</h2>
+<p>We want to look at how each cohort has behaved in the months following their first purchase, so we'll need to index each cohort to their first purchase month. For example, CohortPeriod = 1 will be the cohort's first month, CohortPeriod = 2 is their second, and so on.</p>
+<p>This allows us to compare cohorts across various stages of their lifetime.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cohort_period</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a `CohortPeriod` column, which is the Nth period based on the user&#39;s first purchase.</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    Say you want to get the 3rd month for every user:</span>
+<span class="sd">        df.sort([&#39;UserId&#39;, &#39;OrderTime&#39;, inplace=True)</span>
+<span class="sd">        df = df.groupby(&#39;UserId&#39;).apply(cohort_period)</span>
+<span class="sd">        df[df.CohortPeriod == 3]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;CohortPeriod&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="c1">#print(df)</span>
+    <span class="c1">#print(df.shape)</span>
+    <span class="c1">#print(len(df))</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+<span class="n">cohorts</span> <span class="o">=</span> <span class="n">cohorts</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">cohort_period</span><span class="p">)</span>
+<span class="n">cohorts</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th>TotalUsers</th>
+      <th>TotalCharges</th>
+      <th>TotalOrders</th>
+      <th>CohortPeriod</th>
+    </tr>
+    <tr>
+      <th>CohortGroup</th>
+      <th>OrderPeriod</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="5" valign="top">2009-01</th>
+      <th>2009-01</th>
+      <td>22</td>
+      <td>1850.255</td>
+      <td>30</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2009-02</th>
+      <td>8</td>
+      <td>1351.065</td>
+      <td>25</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>2009-03</th>
+      <td>10</td>
+      <td>1357.360</td>
+      <td>26</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>2009-04</th>
+      <td>9</td>
+      <td>1604.500</td>
+      <td>28</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>2009-05</th>
+      <td>10</td>
+      <td>1575.625</td>
+      <td>26</td>
+      <td>5</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2>5. Make sure we did all that right</h2>
+<p>Let's test data points from the original DataFrame with their corresponding values in the new cohorts DataFrame to make sure all our data transformations worked as expected. As long as none of these raise an exception, we're good.</p>
+<div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">CohortGroup</span> <span class="o">==</span> <span class="s1">&#39;2009-01&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">OrderPeriod</span> <span class="o">==</span> <span class="s1">&#39;2009-01&#39;</span><span class="p">)]</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">cohorts</span><span class="o">.</span><span class="n">ix</span><span class="p">[(</span><span class="s1">&#39;2009-01&#39;</span><span class="p">,</span> <span class="s1">&#39;2009-01&#39;</span><span class="p">)]</span>
+
+<span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;UserId&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="s1">&#39;TotalUsers&#39;</span><span class="p">])</span>
+<span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">])</span>
+<span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;OrderId&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="s1">&#39;TotalOrders&#39;</span><span class="p">])</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">CohortGroup</span> <span class="o">==</span> <span class="s1">&#39;2009-01&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">OrderPeriod</span> <span class="o">==</span> <span class="s1">&#39;2009-09&#39;</span><span class="p">)]</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">cohorts</span><span class="o">.</span><span class="n">ix</span><span class="p">[(</span><span class="s1">&#39;2009-01&#39;</span><span class="p">,</span> <span class="s1">&#39;2009-09&#39;</span><span class="p">)]</span>
+
+<span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;UserId&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="s1">&#39;TotalUsers&#39;</span><span class="p">])</span>
+<span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">])</span>
+<span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;OrderId&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="s1">&#39;TotalOrders&#39;</span><span class="p">])</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">CohortGroup</span> <span class="o">==</span> <span class="s1">&#39;2009-05&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">OrderPeriod</span> <span class="o">==</span> <span class="s1">&#39;2009-09&#39;</span><span class="p">)]</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">cohorts</span><span class="o">.</span><span class="n">ix</span><span class="p">[(</span><span class="s1">&#39;2009-05&#39;</span><span class="p">,</span> <span class="s1">&#39;2009-09&#39;</span><span class="p">)]</span>
+
+<span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;UserId&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="s1">&#39;TotalUsers&#39;</span><span class="p">])</span>
+<span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">])</span>
+<span class="k">assert</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;OrderId&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="s1">&#39;TotalOrders&#39;</span><span class="p">])</span>
+</pre></div>
+
+
+<h2>User Retention by Cohort Group</h2>
+<p>We want to look at the percentage change of each CohortGroup over time -- not the absolute change.</p>
+<p>To do this, we'll first need to create a pandas Series containing each CohortGroup and its size.</p>
+<div class="highlight"><pre><span></span><span class="c1"># reindex the DataFrame</span>
+<span class="n">cohorts</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">cohorts</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;CohortGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;CohortPeriod&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c1"># create a Series holding the total size of each CohortGroup</span>
+<span class="n">cohort_group_size</span> <span class="o">=</span> <span class="n">cohorts</span><span class="p">[</span><span class="s1">&#39;TotalUsers&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="n">cohort_group_size</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>CohortGroup
+2009-01    22
+2009-02    15
+2009-03    13
+2009-04    39
+2009-05    50
+Name: TotalUsers, dtype: int64
+</pre></div>
+
+
+<p>Now, we'll need to divide the TotalUsers values in <code>cohorts</code> by <code>cohort_group_size</code>. Since <code>DataFrame</code> operations are performed based on the indices of the objects, we'll use unstack on our cohorts DataFrame to create a matrix where each column represents a CohortGroup and each row is the CohortPeriod corresponding to that group.</p>
+<p>To illustrate what unstack does, recall the first five TotalUsers values:</p>
+<div class="highlight"><pre><span></span><span class="n">cohorts</span><span class="p">[</span><span class="s1">&#39;TotalUsers&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>CohortGroup  CohortPeriod
+2009-01      1               22
+             2                8
+             3               10
+             4                9
+             5               10
+Name: TotalUsers, dtype: int64
+</pre></div>
+
+
+<p>And here's what they look like when we <code>unstack</code> the CohortGroup level from the index:</p>
+<div class="highlight"><pre><span></span><span class="n">cohorts</span><span class="p">[</span><span class="s1">&#39;TotalUsers&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>CohortGroup</th>
+      <th>2009-01</th>
+      <th>2009-02</th>
+      <th>2009-03</th>
+      <th>2009-04</th>
+      <th>2009-05</th>
+      <th>2009-06</th>
+      <th>2009-07</th>
+      <th>2009-08</th>
+      <th>2009-09</th>
+      <th>2009-10</th>
+      <th>2009-11</th>
+      <th>2009-12</th>
+      <th>2010-01</th>
+      <th>2010-02</th>
+      <th>2010-03</th>
+    </tr>
+    <tr>
+      <th>CohortPeriod</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <td>22.0</td>
+      <td>15.0</td>
+      <td>13.0</td>
+      <td>39.0</td>
+      <td>50.0</td>
+      <td>32.0</td>
+      <td>50.0</td>
+      <td>31.0</td>
+      <td>37.0</td>
+      <td>54.0</td>
+      <td>130.0</td>
+      <td>65.0</td>
+      <td>95.0</td>
+      <td>100.0</td>
+      <td>24.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>8.0</td>
+      <td>3.0</td>
+      <td>4.0</td>
+      <td>13.0</td>
+      <td>13.0</td>
+      <td>15.0</td>
+      <td>23.0</td>
+      <td>11.0</td>
+      <td>15.0</td>
+      <td>17.0</td>
+      <td>32.0</td>
+      <td>17.0</td>
+      <td>50.0</td>
+      <td>19.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>10.0</td>
+      <td>5.0</td>
+      <td>5.0</td>
+      <td>10.0</td>
+      <td>12.0</td>
+      <td>9.0</td>
+      <td>13.0</td>
+      <td>9.0</td>
+      <td>14.0</td>
+      <td>12.0</td>
+      <td>26.0</td>
+      <td>18.0</td>
+      <td>26.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>9.0</td>
+      <td>1.0</td>
+      <td>4.0</td>
+      <td>13.0</td>
+      <td>5.0</td>
+      <td>6.0</td>
+      <td>10.0</td>
+      <td>7.0</td>
+      <td>8.0</td>
+      <td>13.0</td>
+      <td>29.0</td>
+      <td>7.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>10.0</td>
+      <td>4.0</td>
+      <td>1.0</td>
+      <td>6.0</td>
+      <td>4.0</td>
+      <td>7.0</td>
+      <td>11.0</td>
+      <td>6.0</td>
+      <td>13.0</td>
+      <td>13.0</td>
+      <td>13.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Now, we can utilize <code>broadcasting</code> to divide each column by the corresponding cohort_group_size.</p>
+<p>The resulting DataFrame, <code>user_retention</code>, contains the percentage of users from the cohort purchasing within the given period. For instance, 38.4% of users in the 2009-03 purchased again in month 3 (which would be May 2009).</p>
+<div class="highlight"><pre><span></span><span class="n">user_retention</span> <span class="o">=</span> <span class="n">cohorts</span><span class="p">[</span><span class="s1">&#39;TotalUsers&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">cohort_group_size</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">user_retention</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>CohortGroup</th>
+      <th>2009-01</th>
+      <th>2009-02</th>
+      <th>2009-03</th>
+      <th>2009-04</th>
+      <th>2009-05</th>
+      <th>2009-06</th>
+      <th>2009-07</th>
+      <th>2009-08</th>
+      <th>2009-09</th>
+      <th>2009-10</th>
+      <th>2009-11</th>
+      <th>2009-12</th>
+      <th>2010-01</th>
+      <th>2010-02</th>
+      <th>2010-03</th>
+    </tr>
+    <tr>
+      <th>CohortPeriod</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.00</td>
+      <td>1.00000</td>
+      <td>1.00</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.00</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.363636</td>
+      <td>0.200000</td>
+      <td>0.307692</td>
+      <td>0.333333</td>
+      <td>0.26</td>
+      <td>0.46875</td>
+      <td>0.46</td>
+      <td>0.354839</td>
+      <td>0.405405</td>
+      <td>0.314815</td>
+      <td>0.246154</td>
+      <td>0.261538</td>
+      <td>0.526316</td>
+      <td>0.19</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.454545</td>
+      <td>0.333333</td>
+      <td>0.384615</td>
+      <td>0.256410</td>
+      <td>0.24</td>
+      <td>0.28125</td>
+      <td>0.26</td>
+      <td>0.290323</td>
+      <td>0.378378</td>
+      <td>0.222222</td>
+      <td>0.200000</td>
+      <td>0.276923</td>
+      <td>0.273684</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.409091</td>
+      <td>0.066667</td>
+      <td>0.307692</td>
+      <td>0.333333</td>
+      <td>0.10</td>
+      <td>0.18750</td>
+      <td>0.20</td>
+      <td>0.225806</td>
+      <td>0.216216</td>
+      <td>0.240741</td>
+      <td>0.223077</td>
+      <td>0.107692</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>0.454545</td>
+      <td>0.266667</td>
+      <td>0.076923</td>
+      <td>0.153846</td>
+      <td>0.08</td>
+      <td>0.21875</td>
+      <td>0.22</td>
+      <td>0.193548</td>
+      <td>0.351351</td>
+      <td>0.240741</td>
+      <td>0.100000</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>0.363636</td>
+      <td>0.266667</td>
+      <td>0.153846</td>
+      <td>0.179487</td>
+      <td>0.12</td>
+      <td>0.15625</td>
+      <td>0.20</td>
+      <td>0.258065</td>
+      <td>0.243243</td>
+      <td>0.129630</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>0.363636</td>
+      <td>0.266667</td>
+      <td>0.153846</td>
+      <td>0.102564</td>
+      <td>0.06</td>
+      <td>0.09375</td>
+      <td>0.22</td>
+      <td>0.129032</td>
+      <td>0.216216</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>0.318182</td>
+      <td>0.333333</td>
+      <td>0.230769</td>
+      <td>0.153846</td>
+      <td>0.10</td>
+      <td>0.09375</td>
+      <td>0.14</td>
+      <td>0.129032</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>0.318182</td>
+      <td>0.333333</td>
+      <td>0.153846</td>
+      <td>0.051282</td>
+      <td>0.10</td>
+      <td>0.31250</td>
+      <td>0.14</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>0.318182</td>
+      <td>0.266667</td>
+      <td>0.076923</td>
+      <td>0.102564</td>
+      <td>0.08</td>
+      <td>0.09375</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Finally, we can plot the cohorts over time in an effort to spot behavioral differences or similarities. Two common cohort charts are line graphs and heatmaps, both of which are shown below.</p>
+<p>Notice that the first period of each cohort is 100% -- this is because our cohorts are based on each user's first purchase, meaning everyone in the cohort purchased in month 1.</p>
+<div class="highlight"><pre><span></span><span class="n">user_retention</span><span class="p">[[</span><span class="s1">&#39;2009-06&#39;</span><span class="p">,</span> <span class="s1">&#39;2009-07&#39;</span><span class="p">,</span> <span class="s1">&#39;2009-08&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Cohorts: User Retention&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">12.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">% o</span><span class="s1">f Cohort Purchasing&#39;</span><span class="p">);</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_26_0.png" /></p>
+<div class="highlight"><pre><span></span><span class="c1"># Creating heatmaps in matplotlib is more difficult than it should be.</span>
+<span class="c1"># Thankfully, Seaborn makes them easy for us.</span>
+<span class="c1"># http://stanford.edu/~mwaskom/software/seaborn/</span>
+
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="kn">as</span> <span class="nn">sns</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Cohorts: User Retention&#39;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">user_retention</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">user_retention</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">isnull</span><span class="p">(),</span> <span class="n">annot</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;.0%&#39;</span><span class="p">);</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_27_0.png" /></p>
+<p>Unsurprisingly, we can see from the above chart that fewer users tend to purchase as time goes on.</p>
+<p>However, we can also see that the 2009-01 cohort is the strongest, which enables us to ask targeted questions about this cohort compared to others -- what other attributes (besides first purchase month) do these users share which might be causing them to stick around? How were the majority of these users acquired? Was there a specific marketing campaign that brought them in? Did they take advantage of a promotion at sign-up? The answers to these questions would inform future marketing and product efforts.</p>
+<h3>Cohort analysis by Revenue</h3>
+<p>User retention is only one way of using cohorts to look at your business — we could have also looked at revenue retention. That is, the percentage of each cohort’s month 1 revenue returning in subsequent periods. User retention is important, but we shouldn’t lose sight of the revenue each cohort is bringing in (and how much of it is returning).</p>
+<p>The work below shows similar logic, but for revenue rentention (returning customer purchases)</p>
+<div class="highlight"><pre><span></span><span class="c1"># reindex the DataFrame</span>
+<span class="n">cohorts</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">cohorts</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;CohortGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;CohortPeriod&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c1"># create a Series holding the total size of each CohortGroup</span>
+<span class="n">cohort_group_size</span> <span class="o">=</span> <span class="n">cohorts</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="n">cohort_group_size</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>CohortGroup
+2009-01    1850.255
+2009-02     666.310
+2009-03     806.310
+2009-04    2561.250
+2009-05    2627.560
+Name: TotalCharges, dtype: float64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">cohorts</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>CohortGroup  CohortPeriod
+2009-01      1               1850.255
+             2               1351.065
+             3               1357.360
+             4               1604.500
+             5               1575.625
+Name: TotalCharges, dtype: float64
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">cohorts</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>CohortGroup</th>
+      <th>2009-01</th>
+      <th>2009-02</th>
+      <th>2009-03</th>
+      <th>2009-04</th>
+      <th>2009-05</th>
+      <th>2009-06</th>
+      <th>2009-07</th>
+      <th>2009-08</th>
+      <th>2009-09</th>
+      <th>2009-10</th>
+      <th>2009-11</th>
+      <th>2009-12</th>
+      <th>2010-01</th>
+      <th>2010-02</th>
+      <th>2010-03</th>
+    </tr>
+    <tr>
+      <th>CohortPeriod</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <td>1850.255</td>
+      <td>666.31</td>
+      <td>806.31</td>
+      <td>2561.25</td>
+      <td>2627.5600</td>
+      <td>1544.2200</td>
+      <td>2797.7600</td>
+      <td>2605.9981</td>
+      <td>1953.0553</td>
+      <td>3802.2525</td>
+      <td>6738.5869</td>
+      <td>4571.6911</td>
+      <td>9677.9032</td>
+      <td>7374.7108</td>
+      <td>1099.5471</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>1351.065</td>
+      <td>501.61</td>
+      <td>463.80</td>
+      <td>1189.58</td>
+      <td>1146.8300</td>
+      <td>1165.9000</td>
+      <td>1858.3499</td>
+      <td>1869.4376</td>
+      <td>2433.3013</td>
+      <td>1957.8872</td>
+      <td>5107.4213</td>
+      <td>2565.4410</td>
+      <td>8453.1039</td>
+      <td>945.9633</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>1357.360</td>
+      <td>968.78</td>
+      <td>1108.21</td>
+      <td>1085.38</td>
+      <td>648.2100</td>
+      <td>688.2129</td>
+      <td>1312.8502</td>
+      <td>1313.7691</td>
+      <td>1953.2262</td>
+      <td>2394.5338</td>
+      <td>5046.8124</td>
+      <td>1785.7853</td>
+      <td>2238.6461</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>1604.500</td>
+      <td>53.36</td>
+      <td>902.71</td>
+      <td>987.13</td>
+      <td>381.1500</td>
+      <td>922.7762</td>
+      <td>1053.5599</td>
+      <td>1228.7399</td>
+      <td>1371.3499</td>
+      <td>1952.0574</td>
+      <td>3486.0959</td>
+      <td>534.0929</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>1575.625</td>
+      <td>758.52</td>
+      <td>161.25</td>
+      <td>474.01</td>
+      <td>415.5969</td>
+      <td>504.4159</td>
+      <td>833.4690</td>
+      <td>1723.3975</td>
+      <td>2262.0346</td>
+      <td>1783.1022</td>
+      <td>961.3681</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="n">user_revenue</span> <span class="o">=</span> <span class="n">cohorts</span><span class="p">[</span><span class="s1">&#39;TotalCharges&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">cohort_group_size</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">user_revenue</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>CohortGroup</th>
+      <th>2009-01</th>
+      <th>2009-02</th>
+      <th>2009-03</th>
+      <th>2009-04</th>
+      <th>2009-05</th>
+      <th>2009-06</th>
+      <th>2009-07</th>
+      <th>2009-08</th>
+      <th>2009-09</th>
+      <th>2009-10</th>
+      <th>2009-11</th>
+      <th>2009-12</th>
+      <th>2010-01</th>
+      <th>2010-02</th>
+      <th>2010-03</th>
+    </tr>
+    <tr>
+      <th>CohortPeriod</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.730205</td>
+      <td>0.752818</td>
+      <td>0.575213</td>
+      <td>0.464453</td>
+      <td>0.436462</td>
+      <td>0.755009</td>
+      <td>0.664228</td>
+      <td>0.717360</td>
+      <td>1.245895</td>
+      <td>0.514928</td>
+      <td>0.757937</td>
+      <td>0.561158</td>
+      <td>0.873444</td>
+      <td>0.128271</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.733607</td>
+      <td>1.453948</td>
+      <td>1.374422</td>
+      <td>0.423770</td>
+      <td>0.246697</td>
+      <td>0.445670</td>
+      <td>0.469250</td>
+      <td>0.504133</td>
+      <td>1.000088</td>
+      <td>0.629767</td>
+      <td>0.748942</td>
+      <td>0.390618</td>
+      <td>0.231315</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.867178</td>
+      <td>0.080083</td>
+      <td>1.119557</td>
+      <td>0.385409</td>
+      <td>0.145059</td>
+      <td>0.597568</td>
+      <td>0.376573</td>
+      <td>0.471505</td>
+      <td>0.702156</td>
+      <td>0.513395</td>
+      <td>0.517333</td>
+      <td>0.116826</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>0.851572</td>
+      <td>1.138389</td>
+      <td>0.199985</td>
+      <td>0.185070</td>
+      <td>0.158168</td>
+      <td>0.326648</td>
+      <td>0.297906</td>
+      <td>0.661320</td>
+      <td>1.158203</td>
+      <td>0.468959</td>
+      <td>0.142666</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>0.748459</td>
+      <td>1.001186</td>
+      <td>1.253612</td>
+      <td>0.207470</td>
+      <td>0.148069</td>
+      <td>0.118448</td>
+      <td>0.180945</td>
+      <td>0.465518</td>
+      <td>0.943621</td>
+      <td>0.143617</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>0.946270</td>
+      <td>0.471515</td>
+      <td>1.558293</td>
+      <td>0.081775</td>
+      <td>0.133843</td>
+      <td>0.191035</td>
+      <td>0.283461</td>
+      <td>0.612430</td>
+      <td>0.352618</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>0.771013</td>
+      <td>0.851714</td>
+      <td>1.324459</td>
+      <td>0.132402</td>
+      <td>0.159952</td>
+      <td>0.333494</td>
+      <td>0.415736</td>
+      <td>0.183722</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>1.061624</td>
+      <td>0.492684</td>
+      <td>1.122845</td>
+      <td>0.057521</td>
+      <td>0.085086</td>
+      <td>0.784523</td>
+      <td>0.143586</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>0.464979</td>
+      <td>1.108997</td>
+      <td>0.602742</td>
+      <td>0.173956</td>
+      <td>0.233609</td>
+      <td>0.104985</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="n">user_revenue</span><span class="p">[[</span><span class="s1">&#39;2009-06&#39;</span><span class="p">,</span> <span class="s1">&#39;2009-07&#39;</span><span class="p">,</span> <span class="s1">&#39;2009-08&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Cohorts: User Revenue&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">12.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">% o</span><span class="s1">f Cohort Purchasing&#39;</span><span class="p">);</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_34_0.png" /></p>
+<div class="highlight"><pre><span></span><span class="c1"># Creating heatmaps in matplotlib is more difficult than it should be.</span>
+<span class="c1"># Thankfully, Seaborn makes them easy for us.</span>
+<span class="c1"># http://stanford.edu/~mwaskom/software/seaborn/</span>
+
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="kn">as</span> <span class="nn">sns</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Cohorts: User Retention&#39;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">user_revenue</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">user_revenue</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">isnull</span><span class="p">(),</span> <span class="n">annot</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;.0%&#39;</span><span class="p">);</span>
+</pre></div>
+
+
+<p><img alt="png" src="output_35_0.png" /></p>
+<div class="highlight"><pre><span></span>
+</pre></div></div>
+    <footer>
+<p class="meta">
+  <span class="byline author vcard">
+    Posted by <span class="fn">Pandu Ranganath</span>
+  </span>
+<time datetime="2016-10-08T16:00:00-07:00" pubdate>Sat 08 October 2016</time></p>    </footer>
+  </article>
+
+</div>
+<aside class="sidebar">
+    <section id="social-sidebar-top">
+    </section>
+    <section>
+    <h1>Artículos recientes</h1>
+    <ul id="recent_posts">
+        <li class="post">
+        <a href="./cohort-analysis.html">Cohort Analysis</a>
+        </li>
+        <li class="post">
+        <a href="./healthcare-accelerometer-data-case-study.html">Healthcare (Accelerometer data) case study</a>
+        </li>
+        <li class="post">
+        <a href="./beginners-guide-to-learning-data-science.html">Beginner's guide to learning Data Science</a>
+        </li>
+        <li class="post">
+        <a href="./second-post.html">Second Post</a>
+        </li>
+        <li class="post">
+        <a href="./first-post.html">First Post</a>
+        </li>
+    </ul>
+    </section>
+        <section>
+        <h1>Categorías</h1>
+        <ul id="recent_posts">
+            <li><a href="./category/data-science.html">Data Science</a></li>
+        </ul>
+        </section>
+ 
+    <section>
+    <h1>Tags</h1>
+    <a href="./tag/python.html">python</a>    </section>
+
+
+    <section>
+        <h1>Social</h2>
+        <ul>
+            <li><a href="https://www.linkedin.com/in/pandu" target="_blank">LinkedIN</a></li>
+            <li><a href="pandu.ranganath@gmail.com" target="_blank">email</a></li>
+        <li><a href="techflux.github.io/" type="application/rss+xml" rel="alternate">RSS</a></li>
+        </ul>
+    </section>
+    <section>
+        <h1>Blogroll</h2>
+        <ul>
+            <li><a href="@pandu.ranganath@gmail.com" target="_blank">Contact</a></li>
+            <li><a href="#" target="_blank">You can modify those links in your config file</a></li>
+        </ul>
+    </section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Pandu Ranganath -
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span> - 
+  El contenido de este blog está bajo <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.es_CO">Licencia Creative Commons Atribución-CompartirIgual 3.0 Unported</a>.
+</p></footer>
+</body>
+</html>
